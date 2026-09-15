@@ -543,7 +543,7 @@
   function renderDomain(certId, di) {
     var c = cert(certId);
     var d = c.domains[di];
-    var page = el("div", "page page--guide");
+    var page = el("div", "page");
 
     var crumb = el("div", "crumb");
     var back = el("a", null, "← " + c.code + " study guide");
