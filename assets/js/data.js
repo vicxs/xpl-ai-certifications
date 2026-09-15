@@ -1,81 +1,41 @@
-// Certification data, transcribed from the Claude Design source
-// (project 9eda2a04-784c-4de9-b46d-c9d2151dbd6e, file 'Cert Wiki Flow.dc.html').
-// Only the Introduction and Applying & booking pages read this today; the
-// domain/concept/question content is here so the remaining sections need no
-// data work when they land.
+// Certification catalogue. The shell (sidebar, roadmap, applying) was transcribed
+// from the Claude Design source (project 9eda2a04-784c-4de9-b46d-c9d2151dbd6e,
+// file 'Cert Wiki Flow.dc.html').
+//
+// CCAR-F's domains live in content-ccar-f.js, written from the official exam
+// guide — that file must load first. CCDV-F and CCAR-P still carry the design's
+// placeholder outlines; they get the same treatment when their guides land.
 
 const DATA = {
   order: ["CCAR-F", "CCDV-F", "CCAR-P"],
   certs: {
     "CCAR-F": {
       code: "CCAR-F", name: "Claude Certified Architect — Foundations", short: "Architect",
-      blurb: "Agentic architecture, the coding CLI and MCP integration for architects designing production Claude systems. The shared vocabulary everyone on the team should have.",
+      blurb: "Agentic architecture, Claude Code and MCP integration for architects designing production Claude systems. The shared vocabulary everyone on the team should have.",
       items: "60", time: "120 min", fee: "$125", level: "Architect · Foundations",
-      biggest: "Agentic architecture (27%)",
-      domains: [
-        { code: "D1", name: "Agentic Architecture & Orchestration", short: "Agentic architecture", weight: 27,
-          summary: "Single vs. multi-agent, orchestrator patterns, handoffs, failure containment.",
-          intro: "The heaviest domain. Expect scenarios where you choose between a single agent with tools, an orchestrator with subagents, and a plain prompt chain — then justify it on latency, cost and blast radius.",
-          concepts: [
-            { title: "When a single agent is enough", body: "One agent plus tools handles most tasks. Reach for multi-agent only when subtasks need genuinely different context or run in parallel." },
-            { title: "Orchestrator–worker pattern", body: "An orchestrator decomposes, workers execute with narrow tool scopes, the orchestrator recomposes. Know what each layer may and may not see." },
-            { title: "Failure containment", body: "Bound loops and retries, make tool calls idempotent, and stop an agent that cannot make progress rather than letting it burn context." },
-            { title: "Human checkpoints", body: "Insert approval steps where actions are irreversible — payments, deletions, outbound messages." }
-          ],
-          questions: [
-            { d: "standard", text: "A workflow summarises 400 documents overnight; each summary is independent. Which architecture fits best?", opts: ["One agent looping over all 400 documents in a single conversation", "Parallel worker agents, one document each, with an orchestrator collecting results", "A multi-agent debate for each document", "A prompt chain with all 400 documents in one context window"], correct: 1, why: "Independent subtasks parallelise cleanly. Fan-out workers with a collecting orchestrator keeps each context small and lets you retry a single failure." },
-            { d: "challenging", text: "An agent with delete permissions occasionally removes the wrong records. The cheapest structural fix is to:", opts: ["Raise the model's temperature so it varies its approach", "Add a longer system prompt telling it to be careful", "Require a human approval step before any irreversible tool call", "Retry the task three times and take the majority result"], correct: 2, why: "Irreversible actions need a checkpoint, not better wording. Approval gates are the standard containment answer in this domain." }
-          ] },
-        { code: "D2", name: "Agentic CLI Configuration & Workflows", short: "CLI & workflows", weight: 20,
-          summary: "Project configuration, permissions, custom commands, repeatable team setups.",
-          intro: "Tests whether you can set up the coding CLI for a team: what belongs in project configuration, how permissions are scoped, and how repeatable workflows are shared rather than re-typed.",
-          concepts: [
-            { title: "Project vs. user configuration", body: "Project-level config is committed and shared; user-level config is personal. Team conventions belong in the repo." },
-            { title: "Permission scoping", body: "Grant the narrowest tool and path permissions that let the job finish; escalate explicitly rather than globally." },
-            { title: "Repeatable commands", body: "Encode recurring work as saved commands so behaviour is consistent across the team." }
-          ],
-          questions: [
-            { d: "standard", text: "Two engineers get different agent behaviour in the same repository. The most likely cause is:", opts: ["Different model versions in the cloud", "Conventions live in personal user config instead of committed project config", "Network latency", "Different terminal emulators"], correct: 1, why: "Shared behaviour requires shared, committed configuration. Personal config drifts per machine." },
-            { d: "challenging", text: "Best practice for a task that needs one-off write access outside the project directory:", opts: ["Permanently widen the project's allowed paths", "Disable permission prompts for the session", "Grant the specific path for that task, then revoke it", "Run the agent as an administrator"], correct: 2, why: "Least privilege, granted narrowly and temporarily — the recurring principle across this domain." }
-          ] },
-        { code: "D3", name: "Prompt Engineering & Structured Output", short: "Prompting & output", weight: 20,
-          summary: "System prompt anatomy, XML structure, schemas, prefill, few-shot selection.",
-          intro: "Scenario questions on making output reliable enough for a downstream system: where instructions live, how inputs are delimited, and how a schema plus prefill beats polite asking.",
-          concepts: [
-            { title: "System prompt anatomy", body: "Role, task, constraints, output contract — in that order. Instructions in the system turn, data in the user turn." },
-            { title: "XML delimiting", body: "Tags separate instructions from data and make outputs parseable. Name them semantically and keep them consistent." },
-            { title: "Schema + prefill", body: "Declare the output schema, then prefill the opening token to remove preamble and lock the shape." },
-            { title: "Few-shot selection", body: "Three to five diverse examples, including the edge cases you care about, beat twenty near-duplicates." }
-          ],
-          questions: [
-            { d: "standard", text: "A parser consumes the model's JSON and breaks on a friendly preamble. Most reliable fix?", opts: ["Ask politely for JSON only in the user turn", "Declare the schema in the system prompt and prefill the opening brace", "Raise temperature so the model explores formats", "Post-process with a regular expression"], correct: 1, why: "Schema plus prefill constrains the shape and removes preamble at the source; regex patching treats the symptom." },
-            { d: "challenging", text: "A long document is pasted in the user turn and the model starts ignoring the instructions. Best correction?", opts: ["Repeat the instructions after the document as well as in the system turn, with the document XML-tagged", "Shorten the document arbitrarily", "Move everything into the system prompt", "Lower max tokens"], correct: 0, why: "Tag the data and restate the task close to it — instruction position relative to long inputs is a classic tested detail." }
-          ] },
-        { code: "D4", name: "Tool Design & MCP Integration", short: "Tools & MCP", weight: 18,
-          summary: "Tool schemas, descriptions, error returns, MCP servers and transports.",
-          intro: "Tests tool ergonomics from the model's point of view: names, descriptions, argument shapes, what an error should return, and where MCP fits versus a bespoke integration.",
-          concepts: [
-            { title: "Tools are an interface for a model", body: "Clear names, one job per tool, descriptions that state when to use it and when not to." },
-            { title: "Error returns", body: "Return a structured, actionable error the model can recover from instead of throwing an opaque failure." },
-            { title: "MCP's role", body: "MCP standardises how tools and context are exposed, so one server serves many clients instead of per-app glue." }
-          ],
-          questions: [
-            { d: "standard", text: "A model keeps calling the wrong one of two similar tools. First thing to fix:", opts: ["Merge both tools into one with a mode flag", "Sharpen the descriptions so each states when to use it and when not to", "Remove one tool entirely", "Increase the context window"], correct: 1, why: "Selection is driven by descriptions. Disambiguating them is the cheapest and most effective fix." },
-            { d: "challenging", text: "A tool fails because a required argument was missing. It should return:", opts: ["A generic 500 error", "A structured error naming the missing argument and the expected type", "An empty result", "The full stack trace"], correct: 1, why: "Actionable structured errors let the agent self-correct in the next turn; opaque failures cause loops." }
-          ] },
-        { code: "D5", name: "Context Management & Reliability", short: "Context & reliability", weight: 15,
-          summary: "Context budgets, retrieval vs. long context, caching, degradation, evaluation hooks.",
-          intro: "How to keep long-running systems stable: what to keep in context, what to retrieve, what to cache, and how to degrade gracefully under rate limits.",
-          concepts: [
-            { title: "Retrieval vs. long context", body: "Long context is simpler; retrieval wins when the corpus is large, changes often, or cost and latency matter." },
-            { title: "Caching", body: "Cache the stable prefix — system prompt, tool definitions, reference material — and keep volatile content last." },
-            { title: "Graceful degradation", body: "Back off on rate limits, fall back to a smaller model or cached answer, and surface partial results rather than failing hard." }
-          ],
-          questions: [
-            { d: "standard", text: "A support assistant answers from a 400-page manual updated weekly. Best default?", opts: ["Paste the whole manual into every request", "Retrieve the relevant sections per question", "Fine-tune on the manual monthly", "Summarise the manual once and use only the summary"], correct: 1, why: "Large, frequently changing corpus plus per-request cost is the canonical retrieval case." },
-            { d: "challenging", text: "To maximise cache hits across requests you should:", opts: ["Put the user's question first, then the reference material", "Keep the stable system prompt and tool definitions at the start and volatile content at the end", "Randomise the prompt order to spread load", "Disable caching for accuracy"], correct: 1, why: "Caching works on stable prefixes — keep everything variable at the tail." }
-          ] }
-      ] },
+      biggest: "Agent architecture (27%)",
+      /* From the official exam guide. Shown on the study-guide page. */
+      exam: {
+        format: "Multiple choice, one correct answer of four",
+        scoring: "100–1000 scale, pass at 720",
+        penalty: "No guessing penalty — answer every question",
+        scenarios: "4 of 8 possible scenarios, randomly selected",
+        audience: "Solution architects with ~6 months of hands-on Claude experience",
+        covers: ["Claude Agent SDK", "Claude Code", "Model Context Protocol", "Claude API"]
+      },
+      /* The eight scenarios the exam draws from. */
+      scenarios: [
+        "Customer support agent — returns, billing disputes and account issues over MCP tools, targeting 80%+ first-contact resolution with appropriate escalation.",
+        "Code generation with Claude Code — generation, refactoring, debugging and documentation, with custom slash commands, CLAUDE.md and planning mode.",
+        "Multi-agent research system — a coordinator delegating to web research, document analysis, synthesis and report-writing subagents, producing cited reports.",
+        "Developer productivity tools — exploring unfamiliar codebases and automating routine work with built-in tools and MCP servers.",
+        "Claude Code for continuous integration — automated review, test generation and pull request feedback, with prompts tuned to minimise false positives.",
+        "Structured data extraction — pulling information out of unstructured documents, validated against JSON schemas, with edge cases handled correctly.",
+        "Conversational AI architecture patterns — context window management, instruction persistence across turns, memory, safe tool design and ambiguous input.",
+        "Agentic AI tools — reported by candidates but not yet documented in the public study guide."
+      ],
+      domains: window.CCARF_DOMAINS
+    },
     "CCDV-F": {
       code: "CCDV-F", name: "Claude Certified Developer — Foundations", short: "Developer",
       blurb: "API and SDK integration, tool design and coding-CLI workflows for engineers shipping Claude-powered applications.",
