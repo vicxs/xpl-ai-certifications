@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Certification Wiki</title>
+<meta name="description" content="Everything you need to pass the Claude certifications, in one place.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23191919'/%3E%3Cpath d='M11 21.5V10.5h3.4c3.1 0 5.1 2.1 5.1 5.5s-2 5.5-5.1 5.5H11z' fill='%23b34a22'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+
+<div class="shell">
+  <nav class="sidebar" aria-label="Sections">
+    <a class="sidebar__brand" href="#/">
+      <div class="sidebar__title">Certification Wiki</div>
+      <div class="sidebar__meta">internal · v0.2</div>
+    </a>
+
+    <div class="sidebar__section eyebrow">Start here</div>
+    <div class="nav" id="nav-top"></div>
+
+    <div class="sidebar__section eyebrow">Study guides</div>
+    <div class="nav" id="nav-certs"></div>
+
+    <div class="sidebar__section eyebrow">Practice</div>
+    <div class="nav" id="nav-practice"></div>
+
+    <div class="track">
+      <div class="track__label">ACTIVE TRACK</div>
+      <div class="track__name" id="track-name"></div>
+      <div class="bar"><span id="track-bar"></span></div>
+      <div class="track__note">Saved on this device</div>
+      <button type="button" class="track__reset" id="reset-progress">Reset progress</button>
+    </div>
+  </nav>
+
+  <main class="content" id="content"></main>
+</div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
