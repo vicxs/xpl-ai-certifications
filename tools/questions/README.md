@@ -9,14 +9,18 @@ cd tools/questions && python3 emit.py
 - `d1.py` … `d5.py` — the items, one file per domain, written as
   `Q(id, domain, difficulty, scenario, stem, correct, [wrong, wrong, wrong], why)`.
   The correct answer is named rather than positioned, so position carries no
-  information at authoring time.
+  information at authoring time. A trailing `pool="practical"` marks an item as
+  belonging to paper E alone (ids `d1p01`, `d2p01`, …); everything else is core
+  and is partitioned between papers A–D.
 - `fixups.py` — distractors lengthened after measuring the bank, so the correct
   option is not systematically the longest. Wording only; the reasoning behind
   each distractor is unchanged.
-- `emit.py` — assembles the four papers, places the correct option (30 per
+- `emit.py` — assembles the five papers, places the correct option (31 or 32 per
   position overall, balanced inside each paper), shuffles the distractors and the
-  drill order with fixed seeds, and writes the JS. It asserts that the papers
-  partition the bank, so a miscounted domain fails the build rather than shipping.
+  drill order with fixed seeds, and writes the JS. It asserts that A–D partition
+  the core bank and that paper E hits the blueprint without repeating an item, so
+  a miscounted domain fails the build rather than shipping. Paper E's 25 core
+  slots are the hand-picked `E_CORE` list at the top of the file.
 
 Explanations never refer to an option by letter, which is what makes the
 placement step safe.

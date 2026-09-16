@@ -262,3 +262,15 @@ Q("d1c16", D, "challenging", "Developer productivity tools",
    "Subagents cannot share the document between them, so each one would have to re-read it from disk.",
    "The coordinator would become a single point of failure that the current single-agent design avoids."],
   "Multi-agent pays for itself when subtasks are genuinely independent or need separate context. A fixed linear sequence has neither, so you take the latency and token cost of delegation for nothing."),
+
+# --------------------------------------------------------------- practical ---
+# From the practical test. Paper E only — see emit.py.
+
+Q("d1p01", D, "standard", "Multi-agent research system",
+  "The document analysis subagent reaches a PDF it cannot parse. You are designing how that failure is handled. What should the subagent do with it?",
+  "Return an error to the coordinator with the context around it, and let the coordinator decide how to proceed.",
+  ["Skip the corrupted document silently and carry on with the rest, so the workflow is never interrupted.",
+   "Retry the parse three times with exponential backoff before reporting the failure upstream at all.",
+   "Raise an exception that terminates the whole research workflow, since the input set is incomplete."],
+  "The coordinator is the only part of the system placed to choose between skipping the file, trying another parser and telling the user, and it can only choose if it is told. Silence hides a gap in the evidence, backoff cannot repair a corrupt file, and ending the run throws away everything that succeeded.",
+  pool="practical"),

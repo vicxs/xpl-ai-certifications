@@ -198,3 +198,15 @@ Q("d3c12", D, "challenging", "Claude Code for CI",
    "Instruct it to propose only edge cases and error conditions rather than success paths.",
    "Post-process the suggestions, dropping any whose description overlaps an existing test name."],
   "Claude cannot avoid duplicating tests it has never seen. Fewer suggestions just means fewer of both kinds, restricting it to edge cases discards valid new coverage, and name overlap is a poor proxy for scenario overlap."),
+
+# --------------------------------------------------------------- practical ---
+# From the practical test. Paper E only — see emit.py.
+
+Q("d3p01", D, "challenging", "Claude Code for CI",
+  "Two workflows run on synchronous calls: a pre-merge check that blocks the merge until it finishes, and a technical-debt report generated overnight and read the next morning. Your manager proposes moving both to the Message Batches API for the 50% saving. How do you answer?",
+  "Move the technical-debt report to the Batches API and keep the pre-merge check synchronous.",
+  ["Move both, and fall back to a synchronous call whenever a batch is taking longer than the pipeline can wait.",
+   "Move both, and poll for batch status so the pipeline knows exactly when each set of results is ready.",
+   "Keep both synchronous, because batch results come back in an order the pipeline cannot rely on."],
+  "The Batches API carries no latency guarantee and can take up to 24 hours, which an overnight report absorbs and a developer waiting on a merge does not. A mid-run fallback pays for the same work twice, polling does not shorten the wait, and result ordering is not what rules batching out.",
+  pool="practical"),

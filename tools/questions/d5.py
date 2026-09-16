@@ -166,3 +166,24 @@ Q("d5c10", D, "challenging", "Customer support agent",
    "The session identifier, so the provider can restore the conversation from its own stored copy.",
    "The last assistant response, from which the agent can infer where it had reached and continue."],
   "Recovery needs a record of progress, not a transcript to replay: replaying re-executes side effects and re-pays for tokens. There is no provider-side copy to restore, and one response does not describe what has already been done."),
+
+# --------------------------------------------------------------- practical ---
+# From the practical test. Paper E only — see emit.py.
+
+Q("d5p01", D, "standard", "Multi-agent research system",
+  "The web-search subagent times out partway through a complex topic. What does it have to hand back to the coordinator for intelligent recovery to be possible?",
+  "Structured error context: the failure type, the query it ran, any partial results and the alternatives worth trying.",
+  ["An empty result set marked as successful, with the timeout caught and dealt with inside the subagent.",
+   "A generic \"search unavailable\" status, returned once its own exponential-backoff retries are exhausted.",
+   "The timeout exception itself, propagated to the top-level handler so the research workflow stops there."],
+  "The coordinator chooses between retrying with a narrower query, proceeding on what came back and reporting a gap — and it can only choose if the failure tells it which of those are open. A success marker hides the gap, a generic status discards the query and the partial results, and an exception that ends the run discards the work that succeeded.",
+  pool="practical"),
+
+Q("d5p02", D, "challenging", "Customer support agent",
+  "First-contact resolution sits at 55% against a target of 80%. Logs show the agent escalating standard replacements for damaged goods with photo evidence, while handling policy exceptions on its own. What improves the calibration most effectively?",
+  "Explicit escalation criteria in the system prompt, with few-shot examples of what to escalate and what to resolve.",
+  ["Have the agent rate its own confidence from one to ten before each reply, routing anything below a threshold to a human.",
+   "Train a separate classifier on historical tickets to predict which requests need a human before the agent starts work.",
+   "Run sentiment analysis on the customer's messages and escalate automatically once frustration passes a threshold."],
+  "The agent has no stated boundary between the cases it owns and the cases it does not, so it draws one itself and gets it wrong in both directions. Criteria with worked examples supply that boundary. A self-rated score, a trained classifier and a sentiment threshold all build machinery around the decision without ever stating what the decision is.",
+  pool="practical"),

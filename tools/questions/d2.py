@@ -166,3 +166,15 @@ Q("d2c10", D, "challenging", "Multi-agent research system",
    "A single tool that returns the full source document, leaving the synthesis agent to quote and attribute from it.",
    "Retrieval tools that return the claim plus a numeric relevance score the report can cite as a confidence level."],
   "Attribution is lost during summarisation unless the claim-to-source mapping travels with the claim. Dates matter too — without them a temporal difference reads as a contradiction. Appended source lists and relevance scores do not tell you which claim came from where."),
+
+# --------------------------------------------------------------- practical ---
+# From the practical test. Paper E only — see emit.py.
+
+Q("d2p01", D, "challenging", "Multi-agent research system",
+  "Requests like \"analyze the uploaded quarterly report\" reach the web-search agent 45% of the time. That agent owns analyze_content, \"analyzes content and extracts key information\"; the document analysis agent owns analyze_document, \"analyzes documents and extracts key information\". How do you fix the misrouting?",
+  "Rename the web-search tool to extract_web_results and describe it as processing information retrieved from web search and URLs.",
+  ["Add a pre-routing classifier that decides whether a request concerns an uploaded file or web content before the coordinator delegates it.",
+   "Give the coordinator few-shot examples of correct routing: an uploaded quarterly report to document analysis, a web page to web search.",
+   "Extend the document analysis description with usage examples — uploaded PDFs, Word documents, spreadsheets — and leave the web-search tool as it stands."],
+  "Both names and both descriptions say the same thing, so nothing in the definitions separates the tools. Renaming the web-search tool and rewriting its description around web search and URLs removes that overlap itself. A classifier and few-shot routing both leave the ambiguity in place and steer around it, and widening one description still leaves the other claiming the same ground.",
+  pool="practical"),

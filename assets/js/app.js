@@ -1,7 +1,7 @@
 /* Cert Wiki — hash-routed static port of the Claude Design source
    'Cert Wiki Flow.dc.html'. Live routes: the introduction, applying & booking,
    the CCAR-F study guide (#/ccar-f, #/ccar-f/d1 … d5), the question bank
-   (#/bank), the four mock papers (#/mock, #/mock/a, #/mock/a/result) and the
+   (#/bank), the five mock papers (#/mock, #/mock/a, #/mock/a/result) and the
    last result (#/result). Certifications without content keep the "soon"
    treatment in the sidebar. */
 
@@ -783,7 +783,7 @@
     page.appendChild(el("div", "page__eyebrow", "Practice · " + c.code));
     page.appendChild(el("h1", "page__title", "Question bank"));
     page.appendChild(el("p", "page__lead",
-      "Every item from the four mock papers, drillable one at a time with the reasoning shown as soon as you answer. Filter down to a domain you are weak on, or to the questions you got wrong."));
+      "Every item from the five mock papers, drillable one at a time with the reasoning shown as soon as you answer. Filter down to a domain you are weak on, or to the questions you got wrong."));
 
     var domainOpts = [{ label: "All domains", value: "all" }];
     c.domains.forEach(function (d, di) { domainOpts.push({ label: d.code + " · " + d.short, value: di }); });
@@ -894,7 +894,7 @@
     page.appendChild(el("div", "page__eyebrow", "Practice · " + BANK_CERT));
     page.appendChild(el("h1", "page__title", "Mock exams"));
     page.appendChild(el("p", "page__lead",
-      "Four papers of 30 questions, 60 minutes each, weighted exactly like the real exam. A and B are standard; C and D are deliberately harder. No paper shares a question with another, so all four together are the whole bank."));
+      "Five papers of 30 questions, 60 minutes each, weighted exactly like the real exam. A and B are standard, C and D deliberately harder, and those four share no question between them. E is the practical paper: four production scenarios worked end to end, and the only paper that revisits questions from the others."));
 
     var grid = el("div", "mocks");
     MOCKS.forEach(function (m) {
@@ -1228,7 +1228,7 @@
     page.appendChild(el("div", "page__eyebrow", "Practice"));
     page.appendChild(el("h1", "page__title", "My last result"));
     page.appendChild(el("p", "page__lead",
-      "Nothing scored yet. Sit one of the four papers and your result — total, pass verdict and a domain breakdown — shows up here."));
+      "Nothing scored yet. Sit one of the five papers and your result — total, pass verdict and a domain breakdown — shows up here."));
     var actions = el("div", "hero__actions");
     var a = el("a", "btn btn--primary", "Go to the mock exams →");
     a.href = "#/mock";

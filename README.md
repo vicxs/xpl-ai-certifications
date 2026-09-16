@@ -17,13 +17,13 @@ render standalone — this is plain HTML, CSS and vanilla JS with no build step.
   the exam format and the eight exam scenarios (`#/ccar-f`), then a page per domain
   (`#/ccar-f/d1` … `#/ccar-f/d5`) with 30 lessons and a six-question quiz at the end
   of each domain.
-- **Question bank** (`#/bank`) — all 120 CCAR-F practice items, filterable by domain,
+- **Question bank** (`#/bank`) — all 125 CCAR-F practice items, filterable by domain,
   by difficulty and by whether you have answered them (or got them wrong). The
   reasoning appears as soon as you pick an option.
-- **Mock exams** (`#/mock`, `#/mock/a` … `#/mock/d`) — four timed 30-question papers
-  at the real domain weights: A and B standard, C and D harder. 60 minutes on a
-  clock that survives a reload, free navigation between questions, flags, and no
-  feedback until you submit.
+- **Mock exams** (`#/mock`, `#/mock/a` … `#/mock/e`) — five timed 30-question papers
+  at the real domain weights: A and B standard, C and D harder, E the practical
+  paper. 60 minutes on a clock that survives a reload, free navigation between
+  questions, flags, and no feedback until you submit.
 - **Results** (`#/mock/a/result`, or `#/result` for the most recent) — scaled score
   with a pass verdict, a per-domain breakdown, and every question reviewed with its
   explanation.
@@ -36,7 +36,7 @@ CCDV-F and CCAR-P are shown in the navigation with a `soon` tag.
 index.html                    page shell: sidebar + <main>
 assets/css/site.css           all styles; design tokens on :root
 assets/js/content-ccar-f.js   CCAR-F domains: lessons and quiz questions
-assets/js/questions-ccar-f.js CCAR-F question bank (120 items) and the four papers
+assets/js/questions-ccar-f.js CCAR-F question bank (125 items) and the five papers
 assets/js/data.js             catalogue: certs, CCDV-F/CCAR-P outlines, apply steps
 assets/js/app.js              hash router, rendering, localStorage progress
 ```
@@ -65,8 +65,9 @@ from the official guide — confirm them before booking.
 
 ## Question bank and mock exams
 
-`assets/js/questions-ccar-f.js` holds 120 items written from the official guide's
-practice set and its domain notes:
+`assets/js/questions-ccar-f.js` holds 125 items: 120 written from the official
+guide's practice set and its domain notes, plus five from the practical test that
+those 120 do not already cover.
 
 ```js
 window.CCARF_BANK  // { id, dom, diff, scen, text, opts[4], correct, why }
@@ -74,15 +75,22 @@ window.CCARF_MOCKS // { id, label, diff, minutes, blurb, ids[30] }
 ```
 
 The bank is deliberately free of the usual multiple-choice tells. The correct
-option sits in each of the four positions exactly 30 times, and is the longest of
-the four in 30 of the 120 items — chance, not a signal. Distractors are the
+option sits in each of the four positions 31 or 32 times, and is the longest of
+the four in 32 of the 125 items — chance, not a signal. Distractors are the
 answers the guide's own explanations name as tempting (a prompt fix where code is
 needed, an over-engineered classifier, a symptom filter), not filler.
 
-The four papers partition the bank: each item appears in exactly one of them, at
+Papers A–D partition the 120 core items: each appears in exactly one of them, at
 the exam's domain weights (27/18/20/20/15) over 30 questions. A and B are the
 standard pair, C and D the harder pair, so the two papers of a pair never repeat a
 question.
+
+Paper E is the practical paper. The practical test it comes from overlaps the
+guide's practice set almost completely — only five of its 60 questions ask
+something the core bank does not already ask — so E carries those five and fills
+its remaining 25 slots, at the same domain weights, from the core items covering
+the same four production scenarios. It is the one paper that repeats questions
+A–D already ask, and `emit.py` asserts that it does not repeat one within itself.
 
 Scoring maps the raw score onto the exam's 100–1000 scale — `100 + 900 × correct /
 total`, pass at 720. That is a presentation of your raw score, not the certifying
