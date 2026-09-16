@@ -5,6 +5,7 @@ import html, json, random, re, sys, os
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from meta import DOMAIN_META, LEADS
+from extra import EXTRA
 
 OUT = os.path.join(HERE, "..", "..", "assets", "js")
 SRC = json.load(open(os.path.join(HERE, "source.json")))
@@ -185,15 +186,40 @@ def build(name, diff, tag):
 std = build("MOCK_STD", "standard", "s")
 chl = build("MOCK_CHL", "challenging", "c")
 
-def order(items, seed):
-    ids = [it["id"] for it in items]
+# ------------------------------------------------------------- our own ---
+
+DIFF = {"s": "standard", "c": "challenging"}
+
+def build_extras(papers):
+    """The wiki's own items (extra.py), each taking the slot of a ported item in
+    the same domain — so the papers keep 63 items at the blueprint weights and
+    the item that steps aside stays in the bank, drillable."""
+    ported = {it["id"]: it for items in papers.values() for it in items}
+    out = {"s": [], "c": []}
+    for x in EXTRA:
+        it = resolve("EXTRA", x["id"], x)
+        gone = ported[x["replaces"]]
+        assert gone["dom"] == it["dom"], (x["id"], x["replaces"], "different domain")
+        assert gone["id"] in [i["id"] for i in papers[x["paper"]]], (x["id"], "wrong paper")
+        it["id"], it["diff"], it["replaces"] = x["id"], DIFF[x["paper"]], x["replaces"]
+        out[x["paper"]].append(it)
+    for tag in out:
+        place(out[tag], 700 + ord(tag))
+    return out
+
+extras = build_extras({"s": std, "c": chl})
+assert len(set(x["replaces"] for x in EXTRA)) == len(EXTRA), "a slot is claimed twice"
+
+def order(items, extras, seed):
+    swap = {it["replaces"]: it["id"] for it in extras}
+    ids = [swap.get(it["id"], it["id"]) for it in items]
     random.Random(seed).shuffle(ids)
     return ids
 
 MOCKS = [
-    ("ap-standard", "Mock exam · Standard", "Standard", std, 31,
+    ("ap-standard", "s", "Mock exam · Standard", "Standard", std, 31,
      "A full-length paper at the level of the study guide's own check-yourself items: 63 questions in the official domain proportions, single and multiple response mixed as they are on the day. The one to sit first."),
-    ("ap-challenge", "Mock exam · Challenge", "Challenging", chl, 47,
+    ("ap-challenge", "c", "Mock exam · Challenge", "Challenging", chl, 47,
      "The same 63-question shape, deliberately harder: longer scenarios, more options that are defensible in isolation, and more items that turn on a single stated constraint. It shares no question with the standard paper, so the pair can be sat back to back."),
 ]
 
@@ -202,11 +228,16 @@ for it in std:
     counts[it["dom"]] = counts.get(it["dom"], 0) + 1
 per_dom = ", ".join("D%d %d" % (d, counts[d]) for d in sorted(counts))
 
+BANK = std + chl + extras["s"] + extras["c"]
+by_id = {it["id"]: it for it in BANK}
+assert len(by_id) == len(BANK), "duplicate id"
+
 head = '''/* CCAR-P — question bank and mock exams.
 
-   126 items: the two full-length papers of the CCAR-P study site source, each 63
-   questions laid out at the official domain weights — the shape of the real
-   paper (63 scored items, 120 minutes, pass at 720 of 1000).
+   142 items: the 126 of the CCAR-P study site source's two full-length papers,
+   plus 16 written for this wiki. Each paper is 63 questions at the official
+   domain weights — the shape of the real paper (63 scored items, 120 minutes,
+   pass at 720 of 1000).
 
      window.CCARP_BANK   { id, dom, diff, text, opts[4], correct, why }, or a
                          classification item { id, dom, diff, type: "cls", text,
@@ -217,10 +248,12 @@ head = '''/* CCAR-P — question bank and mock exams.
    item; on a classification item it is one category index per statement, in the
    order the statements are listed. 'dom' indexes window.CCARP_DOMAINS.
 
-   The standard and the challenge paper partition the bank: every item appears in
-   exactly one of the two, so the pair can be sat back to back without repetition.
-   Within a paper the order is shuffled once, at build time, so that a run never
-   walks through the syllabus domain by domain.
+   No item is on both papers, so the pair can be sat back to back without
+   repetition. Each of the 16 items written for this wiki takes the paper slot of
+   a ported item in the same domain — the weights are untouched — and the item
+   that stepped aside stays in the bank, drillable, on no paper. That leaves 16
+   of the 142 in the bank only. Within a paper the order is shuffled once, at
+   build time, so that a run never walks through the syllabus domain by domain.
 
    Items per domain, of 63: %s.
 
@@ -230,7 +263,13 @@ window.CCARP_BANK = [
 ''' % per_dom
 
 parts = [head]
-for items in (std, chl):
+for label, items in (("", std), ("", chl),
+                     ("  /* The wiki's own items — see tools/ccar-p/extra.py. Everything above\n"
+                      "     is the port; these 16 are written from the Anthropic documentation each\n"
+                      "     one cites, and each takes the paper slot of a ported item in the same\n"
+                      "     domain, which stays in the bank. */\n", extras["s"] + extras["c"])):
+    if label:
+        parts.append(label)
     for it in items:
         parts.append(emit_q(it, 2, '{ id: "%s", dom: %d, diff: "%s",'
                             % (it["id"], it["dom"] - 1, it["diff"])) + ",")
@@ -242,8 +281,15 @@ parts.append("];\n")
 
 parts.append("window.CCARP_MOCKS = [")
 rows = []
-for mid, label, diff, items, seed, blurb in MOCKS:
-    ids = order(items, seed)
+for mid, tag, label, diff, items, seed, blurb in MOCKS:
+    ids = order(items, extras[tag], seed)
+    assert len(ids) == 63 and len(set(ids)) == 63, mid
+    assert all(i in by_id for i in ids), mid
+    dom_counts = {}
+    for i in ids:
+        d = by_id[i]["dom"]
+        dom_counts[d] = dom_counts.get(d, 0) + 1
+    assert dom_counts == counts, (mid, dom_counts, counts)
     lines = ['  { id: "%s", label: %s, diff: "%s", minutes: 120,' % (mid, js(label), diff),
              "    blurb: " + js(blurb) + ",",
              "    ids: ["]
@@ -259,4 +305,6 @@ open(os.path.join(OUT, "questions-ccar-p.js"), "w").write("\n".join(parts))
 print("domains", len(SRC["DOMAINS"]),
       "| lessons", sum(len(d["skills"]) for d in SRC["DOMAINS"]),
       "| quiz", sum(len(v) for v in quiz.values()),
-      "| bank", len(std) + len(chl))
+      "| bank", len(BANK), "(ported", len(std) + len(chl),
+      "+ ours", len(EXTRA), ")",
+      "| papers 2 x 63")

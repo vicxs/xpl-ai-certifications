@@ -28,7 +28,7 @@ render standalone — this is plain HTML, CSS and vanilla JS with no build step.
   one lesson per blueprint sub-skill — 38 of them, each with its bullet points and
   the traps its distractors are built from — and a quiz of three to ten questions
   per domain.
-- **Question bank** (`#/bank`) — 125 CCAR-F items, 106 CCDV-F items and 126 CCAR-P
+- **Question bank** (`#/bank`) — 125 CCAR-F items, 106 CCDV-F items and 142 CCAR-P
   items, one exam at a time, filterable by domain, by difficulty and by whether you have answered them
   (or got them wrong). The reasoning appears as soon as you answer. Single
   response, multiple response and — on CCAR-P — classification items, the ones
@@ -56,7 +56,7 @@ assets/js/questions-ccar-f.js CCAR-F question bank (125 items) and the five pape
 assets/js/content-ccdv-f.js   CCDV-F domains: lessons and quiz questions
 assets/js/questions-ccdv-f.js CCDV-F question bank (106 items) and the two papers
 assets/js/content-ccar-p.js   CCAR-P domains: lessons and quiz questions
-assets/js/questions-ccar-p.js CCAR-P question bank (126 items) and the two papers
+assets/js/questions-ccar-p.js CCAR-P question bank (142 items) and the two papers
 assets/js/data.js             catalogue: certs, exam facts, apply steps
 assets/js/app.js              hash router, rendering, localStorage progress
 ```
@@ -220,23 +220,39 @@ paper the order was shuffled once, at porting time, so a run does not walk the
 syllabus domain by domain. Unlike CCAR-F's, this file is not generated from a
 `tools/` source: it is the port itself, and is edited directly.
 
-`assets/js/questions-ccar-p.js` holds CCAR-P's 126 items — the two full-length
-papers of the study-site source — in the same shape, plus the classification
-items described below:
+`assets/js/questions-ccar-p.js` holds CCAR-P's 142 items — the 126 of the
+study-site source's two full-length papers, plus 16 written for this wiki — in
+the same shape, plus the classification items described below:
 
 ```js
 window.CCARP_BANK  // { id, dom, diff, text, opts[4], correct, why }
 window.CCARP_MOCKS // { id, label, diff, minutes, blurb, ids[63] }
 ```
 
-Again the two papers partition the bank, at the blueprint weights over 63
-questions (11 / 8 / 12 / 10 / 9 / 9 / 4), and the order within a paper is shuffled
-once at build time. The source it came from shuffled options at runtime and so
+Again no item is on both papers, at the blueprint weights over 63 questions
+(11 / 8 / 12 / 10 / 9 / 9 / 4), and the order within a paper is shuffled once at
+build time. The source it came from shuffled options at runtime and so
 kept its correct answer in position B in about 90% of items; `emit.py` permutes
 instead, leaving the answer in each of the four positions about a quarter of the
 time (32 / 31 / 31 / 30 of the 124 picks) and the longest option among the
 correct ones in a third of the items — chance, not a signal: a two-answer item
 has two chances of holding the longest of the four.
+
+### The wiki's own items
+
+The port stops where its source stopped. It has nothing on context editing,
+compaction, the memory tool, the effort parameter, the Files API, eager tool
+streaming, deferred tool loading, the model lifecycle, or the operational side
+of Claude Code — telemetry, `/mcp`, session hygiene — all of which the blueprint
+covers under D2, D3, D6 and D7. Sixteen items in `tools/ccar-p/extra.py` close
+that gap. They are ours, not a port of anyone's bank: each cites the Anthropic
+documentation page its facts come from, read in September 2026.
+
+Each takes the paper slot of a ported item in the same domain, so both papers
+stay at 63 questions and the blueprint weights, and the item that steps aside
+stays in the bank on no paper — 16 of the 142 are bank-only for that reason.
+Because those 16 describe a product surface that moves, they are the items most
+likely to go stale: when a cited page changes, re-read it and fix the item.
 
 Twenty-one of the items are classification items rather than option items — the
 five in the study guide's quizzes and sixteen across the two papers, where each
