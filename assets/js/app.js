@@ -1,9 +1,9 @@
 /* Cert Wiki — hash-routed static port of the Claude Design source
    'Cert Wiki Flow.dc.html'. Live routes: the introduction, applying & booking,
-   the CCAR-F study guide (#/ccar-f, #/ccar-f/d1 … d5), the question bank
-   (#/bank), the five mock papers (#/mock, #/mock/a, #/mock/a/result) and the
-   last result (#/result). Certifications without content keep the "soon"
-   treatment in the sidebar. */
+   the study guides (#/ccar-f, #/ccar-f/d1 … and #/ccdv-f, #/ccdv-f/d1 …), the
+   question bank (#/bank), the mock papers (#/mock, #/mock/a, #/mock/a/result)
+   and the last result (#/result). Certifications without content keep the
+   "soon" treatment in the sidebar. */
 
 (function () {
   "use strict";
@@ -52,7 +52,7 @@
 
   /* Certifications whose study guide is written. The others stay "soon" in the
      sidebar and on the roadmap until their content lands. */
-  var GUIDES = { "CCAR-F": "#/ccar-f" };
+  var GUIDES = { "CCAR-F": "#/ccar-f", "CCDV-F": "#/ccdv-f" };
 
   function hasGuide(id) { return Object.prototype.hasOwnProperty.call(GUIDES, id); }
 
@@ -68,10 +68,88 @@
         if (state.done[certId + "-" + di + "-" + ci]) hit++;
       });
       d.questions.forEach(function (q, qi) {
-        if (state.quizAnswers[certId + "-" + di + "-" + qi] === q.correct) hit++;
+        if (isRight(q, state.quizAnswers[certId + "-" + di + "-" + qi])) hit++;
       });
     });
     return total ? Math.round(hit / total * 100) : 0;
+  }
+
+  /* ---------- questions: single and multiple response ---------- */
+
+  /* An item's `correct` is an option index, or an array of them when the exam
+     asks for several ("Select TWO"). An answer is stored the same way, so a
+     single-response answer saved by an earlier release still reads back. */
+
+  function isMulti(q) { return Array.isArray(q.correct); }
+
+  function hasAnswer(a) {
+    if (a === undefined || a === null) return false;
+    return Array.isArray(a) ? a.length > 0 : true;
+  }
+
+  function isRight(q, a) {
+    if (!hasAnswer(a)) return false;
+    if (!isMulti(q)) return a === q.correct;
+    if (!Array.isArray(a) || a.length !== q.correct.length) return false;
+    return q.correct.every(function (i) { return a.indexOf(i) !== -1; });
+  }
+
+  function isPicked(a, oi) {
+    return Array.isArray(a) ? a.indexOf(oi) !== -1 : a === oi;
+  }
+
+  /* Returns the answer after clicking option `oi`: a toggle in both modes, but a
+     multiple-response answer keeps the other picks. */
+  function togglePick(q, a, oi) {
+    if (!isMulti(q)) return a === oi ? undefined : oi;
+    var next = Array.isArray(a) ? a.slice() : [];
+    var at = next.indexOf(oi);
+    if (at === -1) next.push(oi); else next.splice(at, 1);
+    return next.sort(function (x, y) { return x - y; });
+  }
+
+  var COUNT_WORDS = ["", "ONE", "TWO", "THREE", "FOUR"];
+
+  function pickLabel(q) { return "Select " + (COUNT_WORDS[q.correct.length] || q.correct.length); }
+
+  function letters(q) {
+    return (isMulti(q) ? q.correct : [q.correct])
+      .map(function (i) { return "ABCD".charAt(i); })
+      .join(" and ");
+  }
+
+  /* ---------- inline markup ---------- */
+
+  /* Lesson and question text may carry <b>, <i> and <code>. Those three become
+     elements; any other angle bracket is text, so a literal <document> in a
+     prompt example survives as written and content files cannot inject markup. */
+
+  var INLINE = { b: "strong", i: "em", code: "code" };
+
+  function rich(text) {
+    var frag = document.createDocumentFragment();
+    if (text === undefined || text === null) return frag;
+    var stack = [frag];
+    var re = /<(\/?)(b|i|code)>/g;
+    var last = 0;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > last) {
+        stack[stack.length - 1].appendChild(document.createTextNode(text.slice(last, m.index)));
+      }
+      last = re.lastIndex;
+      if (m[1]) {
+        if (stack.length > 1) stack.pop();
+      } else {
+        var node = document.createElement(INLINE[m[2]]);
+        stack[stack.length - 1].appendChild(node);
+        stack.push(node);
+      }
+    }
+    if (last < text.length) {
+      stack[stack.length - 1].appendChild(document.createTextNode(text.slice(last)));
+    }
+    return frag;
   }
 
   /* ---------- DOM helpers ---------- */
@@ -82,6 +160,16 @@
     if (text !== undefined && text !== null) n.textContent = text;
     return n;
   }
+
+  /* As el(), but the text is read as inline markup. */
+  function elRich(tag, className, text) {
+    var n = document.createElement(tag);
+    if (className) n.className = className;
+    n.appendChild(rich(text));
+    return n;
+  }
+
+  function plural(n, word) { return n + " " + word + (n === 1 ? "" : "s"); }
 
   function soonTag() { return el("span", "soon-tag", "soon"); }
 
@@ -331,7 +419,7 @@
       if (state.done[certId + "-" + di + "-" + ci]) hit++;
     });
     d.questions.forEach(function (q, qi) {
-      if (state.quizAnswers[certId + "-" + di + "-" + qi] === q.correct) hit++;
+      if (isRight(q, state.quizAnswers[certId + "-" + di + "-" + qi])) hit++;
     });
     return total ? Math.round(hit / total * 100) : 0;
   }
@@ -342,9 +430,9 @@
     var right = 0;
     d.questions.forEach(function (q, qi) {
       var a = state.quizAnswers[certId + "-" + di + "-" + qi];
-      if (a === undefined) return;
+      if (!hasAnswer(a)) return;
       answered++;
-      if (a === q.correct) right++;
+      if (isRight(q, a)) right++;
     });
     return { answered: answered, right: right, total: d.questions.length };
   }
@@ -384,26 +472,19 @@
 
     if (c.exam) {
       var facts = el("div", "facts");
-      [
-        ["Question type", c.exam.format],
-        ["Scoring", c.exam.scoring],
-        ["Guessing", c.exam.penalty],
-        ["Scenarios", c.exam.scenarios],
-        ["Target candidate", c.exam.audience],
-        ["Technologies", c.exam.covers.join(" · ")]
-      ].forEach(function (row) {
+      c.exam.forEach(function (row) {
         var f = el("div", "facts__item");
-        f.appendChild(el("div", "facts__key", row[0]));
-        f.appendChild(el("div", "facts__val", row[1]));
+        f.appendChild(el("div", "facts__key", row.k));
+        f.appendChild(elRich("div", "facts__val", row.v));
         facts.appendChild(f);
       });
       page.appendChild(facts);
     }
 
     var head = el("div", "section__head");
-    head.appendChild(el("div", "eyebrow", "Five domains"));
-    head.appendChild(el("div", "section__note",
-      "Weights are the share of the exam, not the share of the reading. Start with D1 — the other four keep referring back to it."));
+    head.appendChild(el("div", "eyebrow", c.domains.length + " domains"));
+    head.appendChild(el("div", "section__note", c.domainsNote ||
+      "Weights are the share of the exam, not the share of the reading."));
     page.appendChild(head);
 
     var list = el("div", "domains");
@@ -413,7 +494,7 @@
       var top = el("div", "domain-card__top");
       top.appendChild(el("span", "domain-card__code", d.code + " · " + d.weight + "%"));
       top.appendChild(el("span", "domain-card__meta",
-        d.concepts.length + " lessons · " + d.questions.length + " questions"));
+        plural(d.concepts.length, "lesson") + " · " + plural(d.questions.length, "question")));
       a.appendChild(top);
       a.appendChild(el("div", "domain-card__name", d.name));
       a.appendChild(el("div", "domain-card__summary", d.summary));
@@ -426,16 +507,21 @@
     });
     page.appendChild(list);
 
-    if (c.scenarios) {
-      var panel = el("div", "panel");
-      panel.appendChild(el("div", "panel__head", "The eight exam scenarios — four are drawn at random"));
-      var ol = el("ol", "scenarios");
-      c.scenarios.forEach(function (t) { ol.appendChild(el("li", null, t)); });
-      panel.appendChild(ol);
-      page.appendChild(panel);
+    if (c.panels) {
+      var panels = el("div", "panels");
+      c.panels.forEach(function (p) {
+        var panel = el("div", "panel");
+        panel.appendChild(el("div", "panel__head", p.head));
+        var list = el(p.ordered ? "ol" : "ul", "scenarios");
+        if (!p.ordered) list.classList.add("scenarios--plain");
+        p.items.forEach(function (t) { list.appendChild(elRich("li", null, t)); });
+        panel.appendChild(list);
+        panels.appendChild(panel);
+      });
+      page.appendChild(panels);
     }
 
-    page.appendChild(el("div", "footnote",
+    page.appendChild(el("div", "footnote", c.footnote ||
       "Written from the official exam guide and the published course outline. Confirm the current fee, item count and duration with the certifying organisation before you book."));
 
     return page;
@@ -451,6 +537,7 @@
     var title = el("h3", "lesson__title", lesson.title);
     title.id = titleId;
     heading.appendChild(title);
+    if (lesson.weight) heading.appendChild(el("span", "lesson__weight", lesson.weight + "%"));
     top.appendChild(heading);
 
     var key = certId + "-" + di + "-" + ci;
@@ -474,11 +561,11 @@
     node.appendChild(top);
     if (input.checked) node.classList.add("is-read");
 
-    node.appendChild(el("p", "lesson__body", lesson.body));
+    node.appendChild(elRich("p", "lesson__body", lesson.body));
 
     if (lesson.points && lesson.points.length) {
       var ul = el("ul", "lesson__points");
-      lesson.points.forEach(function (t) { ul.appendChild(el("li", null, t)); });
+      lesson.points.forEach(function (t) { ul.appendChild(elRich("li", null, t)); });
       node.appendChild(ul);
     }
 
@@ -491,10 +578,19 @@
       node.appendChild(fig);
     }
 
+    /* `exam` is a paragraph of exam notes, or a list of the traps this lesson's
+       distractors are built from. */
     if (lesson.exam) {
       var note = el("div", "lesson__exam");
-      note.appendChild(el("div", "lesson__exam-head", "On the exam"));
-      note.appendChild(el("div", null, lesson.exam));
+      note.appendChild(el("div", "lesson__exam-head",
+        Array.isArray(lesson.exam) ? "Traps" : "On the exam"));
+      if (Array.isArray(lesson.exam)) {
+        var traps = el("ul", "lesson__traps");
+        lesson.exam.forEach(function (t) { traps.appendChild(elRich("li", null, t)); });
+        note.appendChild(traps);
+      } else {
+        note.appendChild(elRich("div", null, lesson.exam));
+      }
       node.appendChild(note);
     }
 
@@ -504,47 +600,73 @@
   function renderQuestion(certId, di, q, qi) {
     var key = certId + "-" + di + "-" + qi;
     var answer = state.quizAnswers[key];
-    var answered = answer !== undefined;
+    var answered = hasAnswer(answer);
+    var right = isRight(q, answer);
+
+    function commit(a) {
+      var next = Object.assign({}, state.quizAnswers);
+      next[key] = a;
+      save({ quizAnswers: next });
+      render();
+    }
 
     var node = el("div", "q");
     if (answered) node.classList.add("is-answered");
 
     var top = el("div", "q__top");
     top.appendChild(el("span", "q__n", "Q" + (qi + 1)));
-    top.appendChild(el("span", "q__diff", q.d === "challenging" ? "Challenging" : "Standard"));
+    if (q.d) top.appendChild(el("span", "q__diff", q.d === "challenging" ? "Challenging" : "Standard"));
+    if (isMulti(q)) top.appendChild(el("span", "q__diff is-multi", pickLabel(q)));
     if (answered) {
-      top.appendChild(el("span", answer === q.correct ? "q__verdict is-right" : "q__verdict is-wrong",
-        answer === q.correct ? "Correct" : "Incorrect"));
+      top.appendChild(el("span", right ? "q__verdict is-right" : "q__verdict is-wrong",
+        right ? "Correct" : "Incorrect"));
     }
     node.appendChild(top);
-    node.appendChild(el("p", "q__text", q.text));
+    node.appendChild(elRich("p", "q__text", q.text));
+
+    /* Multiple response is not committed one option at a time: the picks are
+       held here until there are as many as the item asks for. */
+    var pending = [];
+    var check = null;
 
     var opts = el("div", "q__opts");
     q.opts.forEach(function (text, oi) {
       var b = el("button", "opt");
       b.type = "button";
       b.appendChild(el("span", "opt__letter", "ABCD".charAt(oi)));
-      b.appendChild(el("span", "opt__text", text));
+      b.appendChild(elRich("span", "opt__text", text));
       if (answered) {
         b.disabled = true;
-        if (oi === q.correct) b.classList.add("is-right");
-        else if (oi === answer) b.classList.add("is-wrong");
-      } else {
+        if (isPicked(q.correct, oi)) b.classList.add("is-right");
+        else if (isPicked(answer, oi)) b.classList.add("is-wrong");
+      } else if (isMulti(q)) {
         b.addEventListener("click", function () {
-          var next = Object.assign({}, state.quizAnswers);
-          next[key] = oi;
-          save({ quizAnswers: next });
-          render();
+          pending = togglePick(q, pending, oi);
+          b.classList.toggle("is-picked", isPicked(pending, oi));
+          check.disabled = pending.length !== q.correct.length;
         });
+      } else {
+        b.addEventListener("click", function () { commit(oi); });
       }
       opts.appendChild(b);
     });
     node.appendChild(opts);
 
+    if (!answered && isMulti(q)) {
+      var row = el("div", "q__actions");
+      check = el("button", "btn btn--ghost", "Check answer");
+      check.type = "button";
+      check.disabled = true;
+      check.addEventListener("click", function () { commit(pending); });
+      row.appendChild(check);
+      row.appendChild(el("span", "q__hint", pickLabel(q).toLowerCase() + " to check"));
+      node.appendChild(row);
+    }
+
     if (answered) {
       var why = el("div", "q__why");
-      why.appendChild(el("span", "q__why-head", "Why " + "ABCD".charAt(q.correct) + ": "));
-      why.appendChild(document.createTextNode(q.why));
+      why.appendChild(el("span", "q__why-head", "Why " + letters(q) + ": "));
+      why.appendChild(rich(q.why));
       node.appendChild(why);
     }
 
@@ -644,15 +766,39 @@
 
   /* ---------- practice: shared helpers ---------- */
 
-  var BANK = window.CCARF_BANK || [];
-  var MOCKS = window.CCARF_MOCKS || [];
-  var BANK_CERT = "CCAR-F";          /* the only certification with a bank today */
+  /* Every certification with a written bank. Items and papers are tagged with
+     their certification as they are collected, so the bank, the papers and the
+     results pages work the same whichever exam they belong to. */
+  var PRACTICE = [
+    { certId: "CCAR-F", bank: window.CCARF_BANK, mocks: window.CCARF_MOCKS },
+    { certId: "CCDV-F", bank: window.CCDVF_BANK, mocks: window.CCDVF_MOCKS }
+  ].filter(function (p) { return p.bank && p.bank.length && p.mocks && p.mocks.length; });
+
+  var BANK = [];
+  var MOCKS = [];
+  PRACTICE.forEach(function (p) {
+    p.bank.forEach(function (q) { q.cert = p.certId; BANK.push(q); });
+    p.mocks.forEach(function (m) { m.cert = p.certId; MOCKS.push(m); });
+  });
+
   var PASS_MARK = 720;
 
   var BY_ID = {};
   BANK.forEach(function (q) { BY_ID[q.id] = q; });
 
-  function domainOf(q) { return cert(BANK_CERT).domains[q.dom]; }
+  /* The bank shows one certification at a time. */
+  function bankCert() {
+    for (var i = 0; i < PRACTICE.length; i++) {
+      if (PRACTICE[i].certId === state.bankCert) return state.bankCert;
+    }
+    return PRACTICE.length ? PRACTICE[0].certId : null;
+  }
+
+  function certItems(certId) {
+    return BANK.filter(function (q) { return q.cert === certId; });
+  }
+
+  function domainOf(q) { return cert(q.cert).domains[q.dom]; }
 
   function diffLabel(d) { return d === "challenging" ? "Challenging" : "Standard"; }
 
@@ -684,35 +830,49 @@
      "exam" (mock in progress: pick, no feedback) or "review" (after submit). */
   function questionCard(q, n, mode, answer, onPick) {
     var node = el("div", "q");
-    var answered = answer !== undefined && answer !== null;
+    var answered = hasAnswer(answer);
+    var right = isRight(q, answer);
     if (answered && mode !== "exam") node.classList.add("is-answered");
 
     var top = el("div", "q__top");
     top.appendChild(el("span", "q__n", "Q" + n));
     top.appendChild(el("span", "q__diff", domainOf(q).code + " · " + domainOf(q).short));
     top.appendChild(el("span", "q__diff", diffLabel(q.diff)));
+    if (isMulti(q)) top.appendChild(el("span", "q__diff is-multi", pickLabel(q)));
     if (answered && mode !== "exam") {
-      top.appendChild(el("span", answer === q.correct ? "q__verdict is-right" : "q__verdict is-wrong",
-        answer === q.correct ? "Correct" : "Incorrect"));
+      top.appendChild(el("span", right ? "q__verdict is-right" : "q__verdict is-wrong",
+        right ? "Correct" : "Incorrect"));
     }
     node.appendChild(top);
 
-    node.appendChild(el("div", "q__scen", q.scen));
-    node.appendChild(el("p", "q__text", q.text));
+    if (q.scen) node.appendChild(el("div", "q__scen", q.scen));
+    node.appendChild(elRich("p", "q__text", q.text));
+
+    /* In the bank a multiple-response item is committed by the check button, so
+       its picks are held here until the answer is complete. In an exam every
+       pick is saved as it happens — there is no feedback to withhold. */
+    var pending = [];
+    var check = null;
 
     var opts = el("div", "q__opts");
     q.opts.forEach(function (text, oi) {
       var b = el("button", "opt");
       b.type = "button";
       b.appendChild(el("span", "opt__letter", "ABCD".charAt(oi)));
-      b.appendChild(el("span", "opt__text", text));
+      b.appendChild(elRich("span", "opt__text", text));
       if (mode === "exam") {
-        if (answer === oi) b.classList.add("is-picked");
-        b.addEventListener("click", function () { onPick(oi); });
+        if (isPicked(answer, oi)) b.classList.add("is-picked");
+        b.addEventListener("click", function () { onPick(togglePick(q, answer, oi)); });
       } else if (answered) {
         b.disabled = true;
-        if (oi === q.correct) b.classList.add("is-right");
-        else if (oi === answer) b.classList.add("is-wrong");
+        if (isPicked(q.correct, oi)) b.classList.add("is-right");
+        else if (isPicked(answer, oi)) b.classList.add("is-wrong");
+      } else if (isMulti(q)) {
+        b.addEventListener("click", function () {
+          pending = togglePick(q, pending, oi);
+          b.classList.toggle("is-picked", isPicked(pending, oi));
+          check.disabled = pending.length !== q.correct.length;
+        });
       } else {
         b.addEventListener("click", function () { onPick(oi); });
       }
@@ -720,16 +880,28 @@
     });
     node.appendChild(opts);
 
+    if (!answered && isMulti(q) && mode !== "exam") {
+      var row = el("div", "q__actions");
+      check = el("button", "btn btn--ghost", "Check answer");
+      check.type = "button";
+      check.disabled = true;
+      check.addEventListener("click", function () { onPick(pending); });
+      row.appendChild(check);
+      row.appendChild(el("span", "q__hint", pickLabel(q).toLowerCase() + " to check"));
+      node.appendChild(row);
+    }
+
     if (answered && mode !== "exam") {
       var why = el("div", "q__why");
-      why.appendChild(el("span", "q__why-head", "Why " + "ABCD".charAt(q.correct) + ": "));
-      why.appendChild(document.createTextNode(q.why));
+      why.appendChild(el("span", "q__why-head", "Why " + letters(q) + ": "));
+      why.appendChild(rich(q.why));
       node.appendChild(why);
     }
     if (mode === "review" && !answered) {
       var skipped = el("div", "q__why");
-      skipped.appendChild(el("span", "q__why-head", "Not answered · correct answer " + "ABCD".charAt(q.correct) + ": "));
-      skipped.appendChild(document.createTextNode(q.why));
+      skipped.appendChild(el("span", "q__why-head",
+        "Not answered · correct answer " + letters(q) + ": "));
+      skipped.appendChild(rich(q.why));
       node.appendChild(skipped);
     }
 
@@ -739,13 +911,12 @@
   /* ---------- question bank ---------- */
 
   function bankFiltered() {
-    return BANK.filter(function (q) {
+    return certItems(bankCert()).filter(function (q) {
       if (state.bankDomain !== "all" && q.dom !== Number(state.bankDomain)) return false;
       if (state.bankDiff !== "all" && q.diff !== state.bankDiff) return false;
       var a = state.bankAnswers[q.id];
-      if (state.bankOnly === "unanswered" && a !== undefined) return false;
-      if (state.bankOnly === "wrong" && a === q.correct) return false;
-      if (state.bankOnly === "wrong" && a === undefined) return false;
+      if (state.bankOnly === "unanswered" && hasAnswer(a)) return false;
+      if (state.bankOnly === "wrong" && (!hasAnswer(a) || isRight(q, a))) return false;
       return true;
     });
   }
@@ -755,9 +926,9 @@
     var right = 0;
     list.forEach(function (q) {
       var a = state.bankAnswers[q.id];
-      if (a === undefined) return;
+      if (!hasAnswer(a)) return;
       answered++;
-      if (a === q.correct) right++;
+      if (isRight(q, a)) right++;
     });
     return { total: list.length, answered: answered, right: right };
   }
@@ -778,17 +949,28 @@
   }
 
   function renderBank() {
-    var c = cert(BANK_CERT);
+    var certId = bankCert();
+    var c = cert(certId);
     var page = el("div", "page");
     page.appendChild(el("div", "page__eyebrow", "Practice · " + c.code));
     page.appendChild(el("h1", "page__title", "Question bank"));
     page.appendChild(el("p", "page__lead",
-      "Every item from the five mock papers, drillable one at a time with the reasoning shown as soon as you answer. Filter down to a domain you are weak on, or to the questions you got wrong."));
+      "Every item from the mock papers, drillable one at a time with the reasoning shown as soon as you answer. Pick an exam, then filter down to a domain you are weak on, or to the questions you got wrong."));
 
     var domainOpts = [{ label: "All domains", value: "all" }];
     c.domains.forEach(function (d, di) { domainOpts.push({ label: d.code + " · " + d.short, value: di }); });
 
     var filters = el("div", "filters");
+    if (PRACTICE.length > 1) {
+      filters.appendChild(filterRow("Exam", PRACTICE.map(function (p) {
+        return { label: p.certId + " · " + cert(p.certId).short, value: p.certId };
+      }), certId, function (v) {
+        /* Domain numbers mean different things in each exam, so the domain
+           filter starts again when the exam changes. */
+        save({ bankCert: v, bankDomain: "all" });
+        render();
+      }));
+    }
     filters.appendChild(filterRow("Domain", domainOpts, state.bankDomain, function (v) {
       save({ bankDomain: v }); render();
     }));
@@ -804,23 +986,32 @@
     ], state.bankOnly, function (v) { save({ bankOnly: v }); render(); }));
     page.appendChild(filters);
 
+    var items = certItems(certId);
     var list = bankFiltered();
-    var all = bankTally(BANK);
+    var all = bankTally(items);
 
     var head = el("div", "quiz__head");
     var left = el("div");
-    left.appendChild(el("div", "eyebrow", "Showing " + list.length + " of " + BANK.length + " questions"));
+    left.appendChild(el("div", "eyebrow", "Showing " + list.length + " of " + items.length + " questions"));
     left.appendChild(el("h2", "quiz__title",
       all.answered ? all.right + " of " + all.answered + " correct so far" : "Nothing answered yet"));
     head.appendChild(left);
 
     var meta = el("div", "quiz__meta");
     meta.appendChild(el("div", "quiz__score",
-      all.answered ? Math.round(all.right / all.answered * 100) + "% · " + (BANK.length - all.answered) + " left" : BANK.length + " questions"));
+      all.answered
+        ? Math.round(all.right / all.answered * 100) + "% · " + (items.length - all.answered) + " left"
+        : items.length + " questions"));
     if (all.answered) {
       var reset = el("button", "quiz__reset", "Reset the bank");
       reset.type = "button";
-      reset.addEventListener("click", function () { save({ bankAnswers: {} }); render(); });
+      reset.addEventListener("click", function () {
+        /* Only this exam's answers — the other bank keeps its history. */
+        var next = Object.assign({}, state.bankAnswers);
+        items.forEach(function (q) { delete next[q.id]; });
+        save({ bankAnswers: next });
+        render();
+      });
       meta.appendChild(reset);
     }
     head.appendChild(meta);
@@ -832,14 +1023,14 @@
       quiz.appendChild(el("p", "empty", "No questions match these filters. Widen them, or reset the bank to start again."));
     }
     list.forEach(function (q, i) {
-      var card = questionCard(q, i + 1, "reveal", state.bankAnswers[q.id], function (oi) {
+      var card = questionCard(q, i + 1, "reveal", state.bankAnswers[q.id], function (answer) {
         var next = Object.assign({}, state.bankAnswers);
-        next[q.id] = oi;
+        next[q.id] = answer;
         save({ bankAnswers: next });
-        var fresh = questionCard(q, i + 1, "reveal", oi, function () {});
+        var fresh = questionCard(q, i + 1, "reveal", answer, function () {});
         quiz.replaceChild(fresh, card);
         card = fresh;
-        refreshBankHead(head);
+        refreshBankHead(head, items);
       });
       quiz.appendChild(card);
     });
@@ -849,27 +1040,27 @@
   }
 
   /* The header counters move on every answer; the list itself does not. */
-  function refreshBankHead(head) {
-    var all = bankTally(BANK);
+  function refreshBankHead(head, items) {
+    var all = bankTally(items);
     var title = head.querySelector(".quiz__title");
     var score = head.querySelector(".quiz__score");
     if (title) title.textContent = all.answered
       ? all.right + " of " + all.answered + " correct so far"
       : "Nothing answered yet";
     if (score) score.textContent = all.answered
-      ? Math.round(all.right / all.answered * 100) + "% · " + (BANK.length - all.answered) + " left"
-      : BANK.length + " questions";
+      ? Math.round(all.right / all.answered * 100) + "% · " + (items.length - all.answered) + " left"
+      : items.length + " questions";
   }
 
   /* ---------- mock exams ---------- */
 
   function scoreAttempt(m, a) {
-    var byDomain = cert(BANK_CERT).domains.map(function () { return { right: 0, total: 0 }; });
+    var byDomain = cert(m.cert).domains.map(function () { return { right: 0, total: 0 }; });
     var right = 0;
     m.ids.forEach(function (qid) {
       var q = BY_ID[qid];
       byDomain[q.dom].total++;
-      if (a.answers[qid] === q.correct) { right++; byDomain[q.dom].right++; }
+      if (isRight(q, a.answers[qid])) { right++; byDomain[q.dom].right++; }
     });
     return {
       right: right, total: m.ids.length, scaled: scaled(right, m.ids.length),
@@ -889,43 +1080,56 @@
     window.location.hash = "#/mock/" + m.id + "/result";
   }
 
+  /* One line per certification, shown above its papers on the index. */
+  var MOCK_NOTES = {
+    "CCAR-F": "Five papers of 30 questions, 60 minutes each, weighted exactly like the real exam. A and B are standard, C and D deliberately harder, and those four share no question between them. E is the practical paper: four production scenarios worked end to end, and the only paper that revisits questions from the others.",
+    "CCDV-F": "Two full-length papers: 53 questions in 120 minutes, the real exam's own length and domain proportions, with single and multiple-response items mixed as they are on the day. The standard paper sits at the level of the guide's sample items; the challenge paper is deliberately above it. They share no question, so the pair can be sat back to back."
+  };
+
   function renderMockIndex() {
     var page = el("div", "page");
-    page.appendChild(el("div", "page__eyebrow", "Practice · " + BANK_CERT));
+    page.appendChild(el("div", "page__eyebrow", "Practice"));
     page.appendChild(el("h1", "page__title", "Mock exams"));
     page.appendChild(el("p", "page__lead",
-      "Five papers of 30 questions, 60 minutes each, weighted exactly like the real exam. A and B are standard, C and D deliberately harder, and those four share no question between them. E is the practical paper: four production scenarios worked end to end, and the only paper that revisits questions from the others."));
+      "Timed papers at the real domain weights, scored on the 100–1000 scale with the pass mark at 720. The clock survives a reload, you can move freely between questions, and nothing is revealed until you submit."));
 
-    var grid = el("div", "mocks");
-    MOCKS.forEach(function (m) {
-      var card = el("a", "mock-card");
-      card.href = "#/mock/" + m.id;
-      var a = attempt(m.id);
-      var s = state.scores[m.id];
+    PRACTICE.forEach(function (p) {
+      var head = el("div", "section__head");
+      head.appendChild(el("div", "eyebrow", p.certId + " · " + cert(p.certId).short));
+      head.appendChild(el("div", "section__note", MOCK_NOTES[p.certId] || ""));
+      page.appendChild(head);
 
-      var top = el("div", "mock-card__top");
-      top.appendChild(el("span", "mock-card__code", m.label));
-      top.appendChild(el("span", "q__diff", m.diff));
-      card.appendChild(top);
+      var grid = el("div", "mocks");
+      p.mocks.forEach(function (m) {
+        var card = el("a", "mock-card");
+        card.href = "#/mock/" + m.id;
+        var a = attempt(m.id);
+        var s = state.scores[m.id];
 
-      card.appendChild(el("div", "mock-card__blurb", m.blurb));
-      card.appendChild(el("div", "mock-card__meta", m.ids.length + " questions · " + m.minutes + " min · pass at " + PASS_MARK));
+        var top = el("div", "mock-card__top");
+        top.appendChild(el("span", "mock-card__code", m.label));
+        top.appendChild(el("span", "q__diff", m.diff));
+        card.appendChild(top);
 
-      var foot = el("div", "mock-card__foot");
-      if (s) {
-        var badge = el("span", s.scaled >= PASS_MARK ? "verdict is-pass" : "verdict is-fail",
-          s.scaled >= PASS_MARK ? "Passed" : "Not yet");
-        foot.appendChild(badge);
-        foot.appendChild(el("span", "mock-card__score", s.scaled + " / 1000 · " + s.right + " of " + s.total + " correct"));
-      } else if (a && !a.submitted) {
-        foot.appendChild(el("span", "mock-card__score", "In progress · " + Object.keys(a.answers).length + " of " + m.ids.length + " answered"));
-      } else {
-        foot.appendChild(el("span", "mock-card__score", "Not started"));
-      }
-      card.appendChild(foot);
-      grid.appendChild(card);
+        card.appendChild(el("div", "mock-card__blurb", m.blurb));
+        card.appendChild(el("div", "mock-card__meta", m.ids.length + " questions · " + m.minutes + " min · pass at " + PASS_MARK));
+
+        var foot = el("div", "mock-card__foot");
+        if (s) {
+          var badge = el("span", s.scaled >= PASS_MARK ? "verdict is-pass" : "verdict is-fail",
+            s.scaled >= PASS_MARK ? "Passed" : "Not yet");
+          foot.appendChild(badge);
+          foot.appendChild(el("span", "mock-card__score", s.scaled + " / 1000 · " + s.right + " of " + s.total + " correct"));
+        } else if (a && !a.submitted) {
+          foot.appendChild(el("span", "mock-card__score", "In progress · " + Object.keys(a.answers).length + " of " + m.ids.length + " answered"));
+        } else {
+          foot.appendChild(el("span", "mock-card__score", "Not started"));
+        }
+        card.appendChild(foot);
+        grid.appendChild(card);
+      });
+      page.appendChild(grid);
     });
-    page.appendChild(grid);
 
     page.appendChild(el("div", "footnote",
       "Scores use the exam's own 100–1000 scale — every item right is 1000, none is 100 — with the pass mark at 720. That is a mapping of your raw score, not the certifying organisation's scoring model, so treat it as a guide rather than a prediction."));
@@ -933,12 +1137,20 @@
     return page;
   }
 
-  var EXAM_RULES = [
-    ["30 questions", "The same domain weights as the real paper: 8 from D1, 5 from D2, 6 from D3, 6 from D4 and 5 from D5."],
-    ["60 minutes", "Half the real exam's length for half its questions. The clock keeps running if you leave the page and comes back where it was."],
-    ["No feedback until you submit", "You can move freely between questions and change any answer. Explanations appear on the results page."],
-    ["No guessing penalty", "An unanswered question scores the same as a wrong one, so answer everything before the clock runs out."]
-  ];
+  var EXAM_RULES = {
+    "CCAR-F": [
+      ["30 questions", "The same domain weights as the real paper: 8 from D1, 5 from D2, 6 from D3, 6 from D4 and 5 from D5."],
+      ["60 minutes", "Half the real exam's length for half its questions. The clock keeps running if you leave the page and comes back where it was."],
+      ["No feedback until you submit", "You can move freely between questions and change any answer. Explanations appear on the results page."],
+      ["No guessing penalty", "An unanswered question scores the same as a wrong one, so answer everything before the clock runs out."]
+    ],
+    "CCDV-F": [
+      ["53 questions", "Full length, at the official weights: 8 from D1, 17 or 18 from D2, 2 from D3, 1 from D4, 9 from D5, 6 from D6, 4 from D7 and 5 or 6 from D8."],
+      ["120 minutes", "The real exam's allowance — a little over two minutes an item. The clock keeps running if you leave the page and comes back where it was."],
+      ["Single and multiple response", "Items that need more than one option say so. A multiple-response item scores only when every option matches."],
+      ["No feedback until you submit", "Move freely between questions, flag what you want to revisit, and change any answer. Explanations appear on the results page."]
+    ]
+  };
 
   function renderMockStart(m) {
     var page = el("div", "page");
@@ -948,12 +1160,12 @@
     crumb.appendChild(back);
     page.appendChild(crumb);
 
-    page.appendChild(el("div", "page__eyebrow", m.diff + " paper · " + BANK_CERT));
+    page.appendChild(el("div", "page__eyebrow", m.diff + " paper · " + m.cert));
     page.appendChild(el("h1", "page__title", m.label));
     page.appendChild(el("p", "page__lead", m.blurb));
 
     var facts = el("div", "facts");
-    EXAM_RULES.forEach(function (row) {
+    (EXAM_RULES[m.cert] || []).forEach(function (row) {
       var f = el("div", "facts__item");
       f.appendChild(el("div", "facts__key", row[0]));
       f.appendChild(el("div", "facts__val", row[1]));
@@ -1028,9 +1240,11 @@
     progress.appendChild(fill);
     page.appendChild(progress);
 
-    var card = questionCard(q, idx + 1, "exam", a.answers[qid], function (oi) {
+    /* The card hands back the answer the click produces — an option index, or
+       the remaining picks of a multiple-response item. */
+    var card = questionCard(q, idx + 1, "exam", a.answers[qid], function (answer) {
       var answers = Object.assign({}, a.answers);
-      if (answers[qid] === oi) delete answers[qid]; else answers[qid] = oi;
+      if (hasAnswer(answer)) answers[qid] = answer; else delete answers[qid];
       var attempts = Object.assign({}, state.attempts);
       attempts[m.id] = Object.assign({}, a, { answers: answers });
       save({ attempts: attempts });
@@ -1163,9 +1377,9 @@
     page.appendChild(head);
 
     var table = el("div", "bydomain");
-    cert(BANK_CERT).domains.forEach(function (d, di) {
-      var row = el("a", "bydomain__row");
-      row.href = "#/ccar-f/d" + (di + 1);
+    cert(m.cert).domains.forEach(function (d, di) {
+      var row = el(hasGuide(m.cert) ? "a" : "div", "bydomain__row");
+      if (hasGuide(m.cert)) row.href = GUIDES[m.cert] + "/d" + (di + 1);
       var name = el("div", "bydomain__name");
       name.appendChild(el("span", "bydomain__code", d.code));
       name.appendChild(el("span", null, d.name));

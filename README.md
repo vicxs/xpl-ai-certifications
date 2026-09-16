@@ -17,18 +17,26 @@ render standalone — this is plain HTML, CSS and vanilla JS with no build step.
   the exam format and the eight exam scenarios (`#/ccar-f`), then a page per domain
   (`#/ccar-f/d1` … `#/ccar-f/d5`) with 30 lessons and a six-question quiz at the end
   of each domain.
-- **Question bank** (`#/bank`) — all 125 CCAR-F practice items, filterable by domain,
-  by difficulty and by whether you have answered them (or got them wrong). The
-  reasoning appears as soon as you pick an option.
-- **Mock exams** (`#/mock`, `#/mock/a` … `#/mock/e`) — five timed 30-question papers
-  at the real domain weights: A and B standard, C and D harder, E the practical
-  paper. 60 minutes on a clock that survives a reload, free navigation between
-  questions, flags, and no feedback until you submit.
+- **CCDV-F study guide** — the Developer Foundations theory: an overview with the
+  exam format, how to read a scenario question and the booking rules (`#/ccdv-f`),
+  then a page per domain (`#/ccdv-f/d1` … `#/ccdv-f/d8`) with one lesson per
+  official sub-skill — 25 of them, each with its own weight and the traps its
+  distractors are built from — and a quiz of three to eight questions per domain.
+- **Question bank** (`#/bank`) — 125 CCAR-F items and 106 CCDV-F items, one exam at a
+  time, filterable by domain, by difficulty and by whether you have answered them
+  (or got them wrong). The reasoning appears as soon as you answer.
+- **Mock exams** (`#/mock`) — CCAR-F's five timed 30-question papers (`#/mock/a` …
+  `#/mock/e`) at the real domain weights: A and B standard, C and D harder, E the
+  practical paper, 60 minutes each. CCDV-F's two full-length papers
+  (`#/mock/dv-standard`, `#/mock/dv-challenge`): 53 questions in 120 minutes, the
+  real exam's own length and proportions. On every paper the clock survives a
+  reload, navigation is free, questions can be flagged, and nothing is revealed
+  until you submit.
 - **Results** (`#/mock/a/result`, or `#/result` for the most recent) — scaled score
   with a pass verdict, a per-domain breakdown, and every question reviewed with its
   explanation.
 
-CCDV-F and CCAR-P are shown in the navigation with a `soon` tag.
+CCAR-P is shown in the navigation with a `soon` tag.
 
 ## Layout
 
@@ -37,13 +45,15 @@ index.html                    page shell: sidebar + <main>
 assets/css/site.css           all styles; design tokens on :root
 assets/js/content-ccar-f.js   CCAR-F domains: lessons and quiz questions
 assets/js/questions-ccar-f.js CCAR-F question bank (125 items) and the five papers
-assets/js/data.js             catalogue: certs, CCDV-F/CCAR-P outlines, apply steps
+assets/js/content-ccdv-f.js   CCDV-F domains: lessons and quiz questions
+assets/js/questions-ccdv-f.js CCDV-F question bank (106 items) and the two papers
+assets/js/data.js             catalogue: certs, the CCAR-P outline, apply steps
 assets/js/app.js              hash router, rendering, localStorage progress
 ```
 
-`content-ccar-f.js` must load before `data.js` — the catalogue reads
-`window.CCARF_DOMAINS` when it is defined. `questions-ccar-f.js` only has to load
-before `app.js`.
+Both `content-*.js` files must load before `data.js` — the catalogue reads
+`window.CCARF_DOMAINS` and `window.CCDVF_DOMAINS` when they are defined. The
+`questions-*.js` files only have to load before `app.js`.
 
 ## CCAR-F content
 
@@ -62,6 +72,37 @@ is picked; each quiz can be reset on its own.
 
 Item count, duration and fee shown on the roadmap come from the design source, not
 from the official guide — confirm them before booking.
+
+## CCDV-F content
+
+Ported from the CCDV-F study guide 1.1 source document, whose domains, sub-skills
+and weights come from the official exam guide v1.0: 8 domains, 25 sub-skills,
+weights to one decimal. One lesson per sub-skill, in the same shape as CCAR-F plus
+two extensions:
+
+```js
+concepts[]   // { ref, title, weight, body, points[], exam[] }
+questions[]  // the end-of-domain quiz: { text, opts[4], correct, why }
+```
+
+- `exam` as an array renders as **Traps** — the wrong answers that tend to look
+  right — rather than as a paragraph of exam notes.
+- `weight` is the sub-skill's own share of the exam, shown beside its number.
+
+Lesson and question text may carry `<b>`, `<i>` and `<code>`. `rich()` in `app.js`
+turns exactly those three into elements and leaves every other angle bracket as
+text, so a literal `<document>` in a prompt example survives as written and content
+files cannot inject markup.
+
+### Multiple response
+
+CCDV-F asks both multiple-choice and multiple-response items, so `correct` is an
+option index *or* an array of them, and an answer is stored the same way. A
+multiple-response item is only scored when every option matches — there is no
+partial credit, as on the real exam. In the study guide and the bank the picks are
+held until the item is complete and then committed with **Check answer**; in a
+paper each pick is saved as it happens, since there is no feedback to withhold.
+Single-response answers saved by an earlier release still read back unchanged.
 
 ## Question bank and mock exams
 
@@ -101,6 +142,22 @@ file per domain, plus the emitter that places the answers and builds the papers)
 `questions-ccar-f.js` is its output and should not be hand-edited. See
 `tools/questions/README.md`.
 
+`assets/js/questions-ccdv-f.js` holds CCDV-F's 106 items — the two full-length
+papers of the study guide 1.1 source — in the same shape, minus `scen` (the
+CCDV-F items are not tied to named production scenarios):
+
+```js
+window.CCDVF_BANK  // { id, dom, diff, text, opts[4], correct, why }
+window.CCDVF_MOCKS // { id, label, diff, minutes, blurb, ids[53] }
+```
+
+The standard and the challenge paper partition the bank: every item is in exactly
+one of the two, at the official weights over 53 questions (8 / 17–18 / 2 / 1 / 9 /
+6 / 4 / 5–6), so the pair can be sat back to back without repetition. Within a
+paper the order was shuffled once, at porting time, so a run does not walk the
+syllabus domain by domain. Unlike CCAR-F's, this file is not generated from a
+`tools/` source: it is the port itself, and is edited directly.
+
 ## Running locally
 
 ```sh
@@ -127,9 +184,17 @@ deadline that has passed submits and scores on the next tick.
 
 1. Write the domains into `assets/js/content-<code>.js`, same shape as CCAR-F.
 2. Point that certification's `domains` at it in `assets/js/data.js`, and load the
-   file before `data.js` in `index.html`.
+   file before `data.js` in `index.html`. `exam` (the fact cards) and `panels` (the
+   lists below the domains) on that entry are optional and render as given.
 3. Add the certification to `GUIDES` in `assets/js/app.js` — the sidebar link, the
    roadmap card link and the `#/<slug>` routes follow from that one entry.
+
+To give it practice as well, write `assets/js/questions-<code>.js` in the shape
+above, load it before `app.js`, and add one row to `PRACTICE` in `app.js`. Items
+and papers are tagged with their certification as they are collected, so the bank
+filter, the paper index and the results pages pick them up. A paper's rules on its
+start page come from `EXAM_RULES[<code>]`, and the line above its cards from
+`MOCK_NOTES[<code>]`.
 
 ## Deployment
 

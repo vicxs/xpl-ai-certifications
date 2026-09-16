@@ -411,6 +411,33 @@ h1.page__title { font: 400 clamp(1.875rem, 2.6vw, 2.5rem)/1.1 var(--serif); marg
   color: rgba(25, 25, 25, .72);
 }
 .scenarios li::marker { font-family: var(--mono); font-size: .6875rem; color: var(--muted-4); }
+/* A panel whose items are not a sequence drops the numbers for bullets. */
+.scenarios--plain { list-style: disc; }
+.scenarios--plain li::marker { color: var(--muted-4); }
+.panels { display: flex; flex-direction: column; gap: .875rem; margin-bottom: 2.125rem; }
+
+/* Inline markup from the content files: <b>, <i> and <code> become these. The
+   code spans sit inside running text, unlike the .code blocks further down. */
+.lesson__body code,
+.lesson__points code,
+.lesson__exam code,
+.q__text code,
+.opt__text code,
+.q__why code,
+.facts__val code,
+.scenarios code {
+  font: 400 .875em var(--mono);
+  background: var(--line-faint);
+  padding: .0625rem .1875rem;
+  border-radius: .1875rem;
+  word-break: break-word;
+}
+.lesson__points strong,
+.lesson__body strong,
+.q__text strong,
+.opt__text strong,
+.q__why strong,
+.scenarios strong { font-weight: 600; color: var(--ink); }
 
 /* domain switcher */
 .rail {
@@ -462,6 +489,16 @@ h1.page__title { font: 400 clamp(1.875rem, 2.6vw, 2.5rem)/1.1 var(--serif); marg
   max-width: 50rem;
 }
 .lesson__points li::marker { color: var(--muted-4); }
+/* The sub-skill's own share of the exam, from the official guide. */
+.lesson__weight { flex: none; font: 400 .6875rem var(--mono); color: var(--muted-4); }
+.lesson__traps {
+  margin: 0;
+  padding-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3125rem;
+}
+.lesson__traps li::marker { color: var(--accent); }
 
 .code {
   margin: .875rem 0 0;
@@ -589,6 +626,13 @@ h1.page__title { font: 400 clamp(1.875rem, 2.6vw, 2.5rem)/1.1 var(--serif); marg
   max-width: 51.25rem;
 }
 .q__why-head { font-family: var(--mono); font-size: .75rem; color: var(--accent); }
+/* Multiple response: the count the item asks for, and the row that commits the
+   picks — a multiple-response answer is only checked once it is complete. */
+.q__diff.is-multi { background: rgba(179, 74, 34, .1); color: var(--accent); }
+.q__actions { display: flex; align-items: center; gap: .75rem; margin-top: .875rem; }
+.q__hint { font: 400 .719rem var(--mono); color: var(--muted-4); }
+.q__actions .btn:disabled { opacity: .45; cursor: default; }
+.q__actions .btn:disabled:hover { opacity: .45; }
 
 /* ---------- previous / next domain ---------- */
 

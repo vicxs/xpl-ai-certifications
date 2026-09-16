@@ -2,9 +2,10 @@
 // from the Claude Design source (project 9eda2a04-784c-4de9-b46d-c9d2151dbd6e,
 // file 'Cert Wiki Flow.dc.html').
 //
-// CCAR-F's domains live in content-ccar-f.js, written from the official exam
-// guide — that file must load first. CCDV-F and CCAR-P still carry the design's
-// placeholder outlines; they get the same treatment when their guides land.
+// CCAR-F's domains live in content-ccar-f.js and CCDV-F's in content-ccdv-f.js,
+// both written from the official exam guides — those files must load first.
+// CCAR-P still carries the design's placeholder outline; it gets the same
+// treatment when its guide lands.
 
 const DATA = {
   order: ["CCAR-F", "CCDV-F", "CCAR-P"],
@@ -14,96 +15,76 @@ const DATA = {
       blurb: "Agentic architecture, Claude Code and MCP integration for architects designing production Claude systems. The shared vocabulary everyone on the team should have.",
       items: "60", time: "120 min", fee: "$125", level: "Architect · Foundations",
       biggest: "Agent architecture (27%)",
+      domainsNote: "Weights are the share of the exam, not the share of the reading. Start with D1 — the other four keep referring back to it.",
       /* From the official exam guide. Shown on the study-guide page. */
-      exam: {
-        format: "Multiple choice, one correct answer of four",
-        scoring: "100–1000 scale, pass at 720",
-        penalty: "No guessing penalty — answer every question",
-        scenarios: "4 of 8 possible scenarios, randomly selected",
-        audience: "Solution architects with ~6 months of hands-on Claude experience",
-        covers: ["Claude Agent SDK", "Claude Code", "Model Context Protocol", "Claude API"]
-      },
+      exam: [
+        { k: "Question type", v: "Multiple choice, one correct answer of four" },
+        { k: "Scoring", v: "100–1000 scale, pass at 720" },
+        { k: "Guessing", v: "No guessing penalty — answer every question" },
+        { k: "Scenarios", v: "4 of 8 possible scenarios, randomly selected" },
+        { k: "Target candidate", v: "Solution architects with ~6 months of hands-on Claude experience" },
+        { k: "Technologies", v: "Claude Agent SDK · Claude Code · Model Context Protocol · Claude API" }
+      ],
       /* The eight scenarios the exam draws from. */
-      scenarios: [
-        "Customer support agent — returns, billing disputes and account issues over MCP tools, targeting 80%+ first-contact resolution with appropriate escalation.",
-        "Code generation with Claude Code — generation, refactoring, debugging and documentation, with custom slash commands, CLAUDE.md and planning mode.",
-        "Multi-agent research system — a coordinator delegating to web research, document analysis, synthesis and report-writing subagents, producing cited reports.",
-        "Developer productivity tools — exploring unfamiliar codebases and automating routine work with built-in tools and MCP servers.",
-        "Claude Code for continuous integration — automated review, test generation and pull request feedback, with prompts tuned to minimise false positives.",
-        "Structured data extraction — pulling information out of unstructured documents, validated against JSON schemas, with edge cases handled correctly.",
-        "Conversational AI architecture patterns — context window management, instruction persistence across turns, memory, safe tool design and ambiguous input.",
-        "Agentic AI tools — reported by candidates but not yet documented in the public study guide."
+      panels: [
+        { head: "The eight exam scenarios — four are drawn at random", ordered: true, items: [
+          "Customer support agent — returns, billing disputes and account issues over MCP tools, targeting 80%+ first-contact resolution with appropriate escalation.",
+          "Code generation with Claude Code — generation, refactoring, debugging and documentation, with custom slash commands, CLAUDE.md and planning mode.",
+          "Multi-agent research system — a coordinator delegating to web research, document analysis, synthesis and report-writing subagents, producing cited reports.",
+          "Developer productivity tools — exploring unfamiliar codebases and automating routine work with built-in tools and MCP servers.",
+          "Claude Code for continuous integration — automated review, test generation and pull request feedback, with prompts tuned to minimise false positives.",
+          "Structured data extraction — pulling information out of unstructured documents, validated against JSON schemas, with edge cases handled correctly.",
+          "Conversational AI architecture patterns — context window management, instruction persistence across turns, memory, safe tool design and ambiguous input.",
+          "Agentic AI tools — reported by candidates but not yet documented in the public study guide."
+        ] }
       ],
       domains: window.CCARF_DOMAINS
     },
     "CCDV-F": {
       code: "CCDV-F", name: "Claude Certified Developer — Foundations", short: "Developer",
-      blurb: "API and SDK integration, tool design and coding-CLI workflows for engineers shipping Claude-powered applications.",
+      blurb: "API and SDK integration, agent construction, tool and MCP design, and the model and cost decisions behind an application that ships. Written for engineers building with Claude rather than specifying it.",
       items: "53", time: "120 min", fee: "$125", level: "Developer · Foundations",
-      biggest: "Applications & integration (33%)",
-      domains: [
-        { code: "D1", name: "Applications & Integration", short: "Applications", weight: 33,
-          summary: "End-to-end integration: streaming, state, errors, latency, cost control.",
-          intro: "The dominant domain. Scenario questions about wiring Claude into a real application: request shape, streaming, retries, idempotency, and where cost actually goes.",
-          concepts: [
-            { title: "Messages, not prompts", body: "Conversations are ordered turns. Server state is yours to manage — resend the history you need." },
-            { title: "Streaming and perceived latency", body: "Stream to the user for long answers; buffer when a downstream parser needs the whole payload." },
-            { title: "Retries and idempotency", body: "Retry with backoff on transient errors and make side-effecting tool calls idempotent so a retry is safe." },
-            { title: "Where cost goes", body: "Input tokens usually dominate. Trim history, cache stable prefixes, and pick the smallest model that passes your evals." }
-          ],
-          questions: [
-            { d: "standard", text: "A chat feature feels slow although total generation time is fine. Best first change?", opts: ["Switch to a larger model", "Stream the response so text appears as it is produced", "Increase max tokens", "Cache the answer after the fact"], correct: 1, why: "Perceived latency is a delivery problem: stream so time-to-first-token drops." },
-            { d: "challenging", text: "A retried request causes a duplicate refund. The correct fix is:", opts: ["Stop retrying altogether", "Give the refund tool an idempotency key so repeats are no-ops", "Lower the temperature", "Move the retry to the client"], correct: 1, why: "Retries are necessary; safety comes from idempotent side effects." }
-          ] },
-        { code: "D2", name: "API & SDK Fundamentals", short: "API & SDK", weight: 22,
-          summary: "Request shape, parameters, token accounting, rate limits, error codes.",
-          intro: "The mechanical domain: what each parameter does, how tokens are counted and billed, which errors are retryable, and how rate limits present themselves.",
-          concepts: [
-            { title: "Parameters that matter", body: "Temperature for variance, stop sequences for boundaries, max tokens as a ceiling — not a target." },
-            { title: "Token accounting", body: "Input and output tokens are billed separately; system prompts and tool definitions count every request." },
-            { title: "Error taxonomy", body: "Distinguish client mistakes from rate limits and transient server errors — only the latter two deserve retries." }
-          ],
-          questions: [
-            { d: "standard", text: "Which error should be retried with exponential backoff?", opts: ["Malformed request body", "Rate limit exceeded", "Invalid API key", "Unsupported parameter"], correct: 1, why: "Rate limits and transient server errors are retryable; client errors repeat identically." },
-            { d: "challenging", text: "Output is being cut mid-sentence. Most likely cause:", opts: ["Temperature too low", "The max tokens ceiling is too small for the requested answer", "Missing system prompt", "Streaming enabled"], correct: 1, why: "Truncation points at the output ceiling — check the stop reason before anything else." }
-          ] },
-        { code: "D3", name: "Tool Use & Agent SDK", short: "Tools & agents", weight: 18,
-          summary: "Tool schemas, the tool-use loop, agent loops, guardrails.",
-          intro: "The tool-use loop end to end: definition, model request, your execution, result back in, and where to put the guardrails.",
-          concepts: [
-            { title: "The tool loop", body: "The model requests a call, your code executes it, the result returns as a tool result turn. Your code is always the executor." },
-            { title: "Schemas are documentation", body: "Types, enums and required fields prevent malformed calls before validation has to." },
-            { title: "Loop guardrails", body: "Cap iterations, detect no-progress states, and log every call for debugging." }
-          ],
-          questions: [
-            { d: "standard", text: "In the tool-use loop, who executes the tool?", opts: ["The model, in a sandbox", "Your application code", "The SDK, automatically and invisibly", "The proctoring service"], correct: 1, why: "The model only requests; execution and its side effects are always yours." },
-            { d: "challenging", text: "An agent repeats the same failing search forever. Best structural guardrail:", opts: ["Longer system prompt warning about loops", "Iteration cap plus no-progress detection that stops the run", "Higher temperature to vary the query", "Larger context window"], correct: 1, why: "Loop control is structural, not rhetorical." }
-          ] },
-        { code: "D4", name: "Prompt & Output Contracts", short: "Output contracts", weight: 15,
-          summary: "Structured output, validation, versioning prompts alongside code.",
-          intro: "Keeping model output safe to consume: schemas, validation at the boundary, and treating prompts as versioned artefacts.",
-          concepts: [
-            { title: "Validate at the boundary", body: "Parse and validate before anything downstream sees the output; reject and repair rather than trusting it." },
-            { title: "Prompts are code", body: "Version them, review them, and test them — a prompt change is a deploy." },
-            { title: "Repair loops", body: "On a schema violation, return the validation error to the model for one bounded repair attempt." }
-          ],
-          questions: [
-            { d: "standard", text: "Schema validation fails on a response. The best next step is:", opts: ["Write the record anyway and log a warning", "Return the validation error to the model for one bounded repair attempt", "Retry the identical request indefinitely", "Disable validation for that field"], correct: 1, why: "A single bounded repair with the concrete error is the standard recovery." },
-            { d: "challenging", text: "Output quality drops after a deploy that touched no model code. Most likely cause:", opts: ["The model changed on its own", "An unversioned prompt edit shipped with the deploy", "Token prices changed", "Rate limits tightened"], correct: 1, why: "Unversioned prompts are the usual culprit — hence prompts-as-code." }
-          ] },
-        { code: "D5", name: "Testing, Cost & Limits", short: "Testing & cost", weight: 12,
-          summary: "Eval sets, regression testing, cost modelling, safe limits.",
-          intro: "How you know a change is an improvement: small honest eval sets, regression runs on every prompt change, and a cost model you can defend.",
-          concepts: [
-            { title: "Small honest eval sets", body: "Twenty representative cases with known answers beat a thousand unlabelled ones." },
-            { title: "Regression on prompt change", body: "Re-run the eval set on every prompt or model change; store scores over time." },
-            { title: "Cost modelling", body: "Model cost per request from real token counts, then multiply by expected volume — not by vibes." }
-          ],
-          questions: [
-            { d: "standard", text: "You changed a system prompt and accuracy feels better. Before shipping you should:", opts: ["Ship it — the change is qualitative", "Re-run the eval set and compare scores against the previous version", "Double the temperature to confirm robustness", "Ask the model to grade itself without a reference"], correct: 1, why: "Regression against a fixed set is the only way to distinguish improvement from impression." },
-            { d: "challenging", text: "Cost per request is drifting upward with no code change. Most likely cause:", opts: ["The model got slower", "Conversation history is growing and is resent every turn", "Streaming is enabled", "Stop sequences are too short"], correct: 1, why: "Input tokens dominate; unbounded history growth is the usual cause of drift." }
-          ] }
-      ] },
+      biggest: "Applications & integration (33.1%)",
+      domainsNote: "Eight domains, weighted to one decimal in the official guide. D2, D5 and D1 are two thirds of the paper between them — give them two thirds of the reading.",
+      /* From the CCDV-F exam guide v1.0 and the certification page. */
+      exam: [
+        { k: "Question type", v: "Multiple choice and multiple response — each item says how many options to select" },
+        { k: "Length", v: "53 scored questions in 120 minutes, about two minutes an item" },
+        { k: "Scoring", v: "100–1000 scale, pass at 720; criterion-referenced, so you clear a fixed standard rather than a curve" },
+        { k: "Score report", v: "Pass or fail, the scaled score, and your percentage per domain — the last is informational" },
+        { k: "Target candidate", v: "1–5 years of software engineering and at least 6 months building with Claude or another LLM" },
+        { k: "Technologies", v: "Claude API · Claude Agent SDK · Claude Code · Model Context Protocol" }
+      ],
+      panels: [
+        { head: "How the questions work", items: [
+          "Scenarios, not recall: a team needs something, and four approaches are offered. You are asked for the <b>best</b> one, not for one that would work.",
+          "Multiple-response items state the count (\"Select TWO\"). Partial credit is not on offer — every option has to match.",
+          "No essays, no labs, nothing to run. Code appears only as something to read.",
+          "Many wrong options are defensible in isolation; what rules them out is the constraint the scenario put first.",
+          "Criterion-referenced: you pass by clearing a fixed standard, not by beating other candidates."
+        ] },
+        { head: "Reading a scenario question", ordered: true, items: [
+          "Find the dominant constraint — cost, latency, security, reuse or determinism. The right option optimises for that one.",
+          "Rule out options that put a prompt instruction where a programmatic control belongs. Money, security and destructive actions need hooks, gates or permissions.",
+          "Rule out options that \"fix\" the problem by changing model or temperature without touching the cause.",
+          "If Claude is choosing the wrong tool, the first move is almost always better tool descriptions — not merging tools or adding a router.",
+          "Map the sharing scope to the mechanism: reusable across apps and separately maintained is an MCP server; only your machine is <code>~/.claude/</code>; the whole team is <code><project>/.claude/</code> in version control."
+        ] },
+        { head: "Registration, retakes and renewal", items: [
+          "Register through the Anthropic Partner Academy (it needs an email from a Claude Partner Network organisation), check out, create a Pearson VUE account, then pick a date and a mode: online proctored or a test centre.",
+          "Cancel or reschedule up to 24 hours before; inside that window the fee is forfeited. 125 USD an attempt, with partner-tier discounts.",
+          "Government photo ID, with the name matching the registration exactly. You sign an NDA at the start and cannot share exam content.",
+          "Retakes: 14 days after a first fail, 30 after a second, 90 after a third. At most four attempts in 12 months, each paid.",
+          "The credential is valid for 12 months. Renew on time with a free, non-proctored assessment in the Partner Academy; if it lapses you sit the full exam again."
+        ] },
+        { head: "Where to put your hours", items: [
+          "Domains 2, 5 and 1 are almost two thirds of the exam. Domains 3 and 4 are two or three questions you get for free if you have used Claude Code and debugged a real integration.",
+          "Build at least one small application that calls the API, uses a tool and runs a hook. Most scenario questions get easier once you have felt the failure modes yourself."
+        ] }
+      ],
+      footnote: "Written from the CCDV-F exam guide v1.0, the certification page and the platform, Claude Code and MCP documentation. Questions here are original: the real bank is under NDA, and prices used in cost questions are illustrative. Confirm the current fee, item count and duration with the certifying organisation before you book.",
+      domains: window.CCDVF_DOMAINS
+    },
     "CCAR-P": {
       code: "CCAR-P", name: "Claude Certified Architect — Professional", short: "Architect Pro",
       blurb: "Advanced solution design, integration, governance and evaluation for senior architects delivering production systems. Requires the Architect Foundations certification.",
