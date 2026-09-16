@@ -634,6 +634,43 @@ h1.page__title { font: 400 clamp(1.875rem, 2.6vw, 2.5rem)/1.1 var(--serif); marg
 .q__actions .btn:disabled { opacity: .45; cursor: default; }
 .q__actions .btn:disabled:hover { opacity: .45; }
 
+/* Classification: a criterion, one statement per row and a box per category —
+   the third item type the exam asks ("classify each of these as True or False",
+   "which chunking strategy does each description match"). Every row has to be
+   placed, and the item is checked in one go like a multiple-response one. */
+.q__cls { display: flex; flex-direction: column; gap: .5rem; margin-top: .125rem; }
+.cls-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .625rem 1rem;
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: .4375rem;
+  padding: .625rem .875rem;
+}
+.cls-row.is-right { border-color: rgba(47, 107, 63, .45); }
+.cls-row.is-wrong { border-color: rgba(179, 74, 34, .45); }
+.cls-row__text { font: 400 .844rem/1.5 var(--sans); }
+.cls-row__cats { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .375rem; }
+.cls-cat {
+  appearance: none;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: .3125rem;
+  padding: .3125rem .625rem;
+  font: 400 .719rem/1.4 var(--mono);
+  color: var(--muted-3);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.cls-cat:hover:not(:disabled) { border-color: var(--ink); color: var(--ink); }
+.cls-cat:disabled { cursor: default; }
+.cls-cat.is-picked { border-color: var(--ink); background: var(--panel); color: var(--ink); }
+.cls-cat.is-right { border-color: #2f6b3f; background: rgba(47, 107, 63, .07); color: #2f6b3f; }
+.cls-cat.is-wrong { border-color: var(--accent); background: rgba(179, 74, 34, .06); color: var(--accent); }
+.q__cls .q__actions { margin-top: .25rem; }
+
 /* ---------- previous / next domain ---------- */
 
 .guide-nav {
@@ -797,6 +834,8 @@ h1.page__title { font: 400 clamp(1.875rem, 2.6vw, 2.5rem)/1.1 var(--serif); marg
 .exam-grid__n:hover { border-color: var(--ink); color: var(--ink); }
 .exam-grid__n.is-done { background: var(--panel); color: var(--ink); border-color: var(--line); }
 .exam-grid__n.is-flagged { border-color: var(--accent); color: var(--accent); }
+/* Started but not finished: a classification item with statements still loose. */
+.exam-grid__n.is-part { border-style: dashed; border-color: var(--muted-4); color: var(--ink); }
 .exam-grid__n.is-current { background: var(--ink); border-color: var(--ink); color: #fff; }
 
 .exam-submit {
@@ -867,6 +906,8 @@ h1.page__title { font: 400 clamp(1.875rem, 2.6vw, 2.5rem)/1.1 var(--serif); marg
   .hero { grid-template-columns: 1fr; gap: 1.375rem; }
   .rail { grid-template-columns: repeat(2, 1fr); }
   .bydomain__row { grid-template-columns: minmax(0, 1fr) 5rem auto; gap: .75rem; }
+  .cls-row { grid-template-columns: minmax(0, 1fr); }
+  .cls-row__cats { justify-content: flex-start; }
 }
 
 @media (max-width: 460px) {
@@ -874,6 +915,8 @@ h1.page__title { font: 400 clamp(1.875rem, 2.6vw, 2.5rem)/1.1 var(--serif); marg
   .step__n { width: 1.625rem; }
   .rail { grid-template-columns: 1fr; }
   .lesson, .q { padding: 1rem; }
+  .cls-row { padding: .625rem .75rem; }
+  .cls-cat { white-space: normal; }
   .lesson__heading { flex-direction: column; gap: .1875rem; }
   .guide-nav { flex-direction: column; }
   .guide-nav__link, .guide-nav__link--next { max-width: none; text-align: left; margin-left: 0; }

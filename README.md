@@ -30,14 +30,16 @@ render standalone — this is plain HTML, CSS and vanilla JS with no build step.
   per domain.
 - **Question bank** (`#/bank`) — 125 CCAR-F items, 106 CCDV-F items and 126 CCAR-P
   items, one exam at a time, filterable by domain, by difficulty and by whether you have answered them
-  (or got them wrong). The reasoning appears as soon as you answer.
+  (or got them wrong). The reasoning appears as soon as you answer. Single
+  response, multiple response and — on CCAR-P — classification items, the ones
+  that hand you a criterion and a box per statement.
 - **Mock exams** (`#/mock`) — CCAR-F's five timed 30-question papers (`#/mock/a` …
   `#/mock/e`) at the real domain weights: A and B standard, C and D harder, E the
   practical paper, 60 minutes each. CCDV-F's two full-length papers
   (`#/mock/dv-standard`, `#/mock/dv-challenge`): 53 questions in 120 minutes, the
   real exam's own length and proportions. CCAR-P's two full-length papers
   (`#/mock/ap-standard`, `#/mock/ap-challenge`): 63 standalone items in 120 minutes
-  at the blueprint weights. On every paper the clock survives a
+  at the blueprint weights, classification items included. On every paper the clock survives a
   reload, navigation is free, questions can be flagged, and nothing is revealed
   until you submit.
 - **Results** (`#/mock/a/result`, or `#/result` for the most recent) — scaled score
@@ -122,13 +124,42 @@ per domain only, not per sub-skill:
 
 ```js
 concepts[]   // { ref, title, body, points[], exam[] }
-questions[]  // the end-of-domain quiz: { text, opts[4], correct, why }
+questions[]  // the end-of-domain quiz: { text, opts[4], correct, why }, or a
+             // classification item (below): { type: "cls", text, cats[], stmts[], correct, why }
 ```
 
 Both files are generated; the authoring source is in `tools/ccar-p/`. The domain
 framing and the lead sentence on each lesson are written from the study guide's
 own prose (its decision rules and exam traps); everything else — bullet points,
 traps, questions and reasoning — is the port. See `tools/ccar-p/README.md`.
+
+### Classification
+
+The CCAR-P paper asks a third kind of item: a criterion, a handful of statements
+and a box per statement — True or False, pre-processing or post-processing, which
+chunking strategy each description matches. Those carry `type: "cls"`, list their
+`cats` and their `stmts`, and their `correct` is one category index per statement,
+in the order the statements are listed:
+
+```js
+{ type: "cls",
+  text: "Classify each RAG activity as Pre-processing or Post-processing.",
+  cats: ["Pre-processing", "Post-processing"],
+  stmts: ["Chunking documents at section boundaries with overlap", /* … */],
+  correct: [0, 1, 0, 1, 0],
+  why: "…" }
+```
+
+An answer is stored the same way, with `null` where a row is still empty, and the
+item is scored all or nothing: every statement has to match, as with multiple
+response. In the study guide and the bank the placements are held until every row
+is filled and then committed with **Check answer**; in a paper each placement is
+saved as it happens, so a half-placed item survives a reload — it is kept as you
+left it, shown with a dashed square in the question grid, and counts as
+unanswered until it is complete.
+
+Only CCAR-P has these items today. Nothing is CCAR-P-specific in the renderer, so
+any `questions-*.js` or `content-*.js` file can use the same shape.
 
 Note two facts that differ from the placeholder outline this release replaces:
 CCAR-P has **no certification prerequisite** (Foundations is recommended, not
@@ -190,7 +221,8 @@ syllabus domain by domain. Unlike CCAR-F's, this file is not generated from a
 `tools/` source: it is the port itself, and is edited directly.
 
 `assets/js/questions-ccar-p.js` holds CCAR-P's 126 items — the two full-length
-papers of the study-site source — in the same shape:
+papers of the study-site source — in the same shape, plus the classification
+items described below:
 
 ```js
 window.CCARP_BANK  // { id, dom, diff, text, opts[4], correct, why }
@@ -202,10 +234,17 @@ questions (11 / 8 / 12 / 10 / 9 / 9 / 4), and the order within a paper is shuffl
 once at build time. The source it came from shuffled options at runtime and so
 kept its correct answer in position B in about 90% of items; `emit.py` permutes
 instead, leaving the answer in each of the four positions about a quarter of the
-time and the longest option correct 25% of the time — chance, not a signal. The
-source's 21 "classify these five statements" exercises become four-option
-multiple-response items, because the real paper is standalone multiple-choice and
-multiple-response only.
+time (32 / 31 / 31 / 30 of the 124 picks) and the longest option among the
+correct ones in a third of the items — chance, not a signal: a two-answer item
+has two chances of holding the longest of the four.
+
+Twenty-one of the items are classification items rather than option items — the
+five in the study guide's quizzes and sixteen across the two papers, where each
+takes one of the 63 slots and leaves the domain weights untouched:
+
+```js
+{ id, dom, diff, type: "cls", text, cats[], stmts[], correct, why }
+```
 
 ## Running locally
 

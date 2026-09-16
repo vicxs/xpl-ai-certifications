@@ -74,21 +74,45 @@
     return total ? Math.round(hit / total * 100) : 0;
   }
 
-  /* ---------- questions: single and multiple response ---------- */
+  /* ---------- questions: single response, multiple response, classification ---------- */
 
   /* An item's `correct` is an option index, or an array of them when the exam
      asks for several ("Select TWO"). An answer is stored the same way, so a
-     single-response answer saved by an earlier release still reads back. */
+     single-response answer saved by an earlier release still reads back.
 
-  function isMulti(q) { return Array.isArray(q.correct); }
+     A classification item (`type: "cls"`) is the third kind the exam asks: a
+     criterion, a list of statements and a box per statement — True or False,
+     or which of several strategies each description matches. There `correct` is
+     one category index per statement, in the order `stmts` lists them, and an
+     answer is the same array with null where a row is still empty. It scores
+     only when every row matches, exactly as multiple response does. */
 
+  function isCls(q) { return !!q && q.type === "cls"; }
+
+  function isMulti(q) { return !isCls(q) && Array.isArray(q.correct); }
+
+  /* Complete enough to be scored. A half-classified item is not: it counts as
+     unanswered until every statement has been placed. */
   function hasAnswer(a) {
     if (a === undefined || a === null) return false;
-    return Array.isArray(a) ? a.length > 0 : true;
+    if (!Array.isArray(a)) return true;
+    return a.length > 0 && a.every(function (x) { return x !== null && x !== undefined; });
+  }
+
+  /* Anything the user has actually chosen, complete or not. An exam keeps a
+     half-classified item so the picks survive a reload. */
+  function hasPick(a) {
+    if (a === undefined || a === null) return false;
+    if (!Array.isArray(a)) return true;
+    return a.some(function (x) { return x !== null && x !== undefined; });
   }
 
   function isRight(q, a) {
     if (!hasAnswer(a)) return false;
+    if (isCls(q)) {
+      if (!Array.isArray(a) || a.length !== q.correct.length) return false;
+      return q.correct.every(function (c, i) { return a[i] === c; });
+    }
     if (!isMulti(q)) return a === q.correct;
     if (!Array.isArray(a) || a.length !== q.correct.length) return false;
     return q.correct.every(function (i) { return a.indexOf(i) !== -1; });
@@ -110,12 +134,160 @@
 
   var COUNT_WORDS = ["", "ONE", "TWO", "THREE", "FOUR"];
 
-  function pickLabel(q) { return "Select " + (COUNT_WORDS[q.correct.length] || q.correct.length); }
+  function pickLabel(q) {
+    if (isCls(q)) return "Classify all " + q.stmts.length;
+    return "Select " + (COUNT_WORDS[q.correct.length] || q.correct.length);
+  }
 
   function letters(q) {
     return (isMulti(q) ? q.correct : [q.correct])
       .map(function (i) { return "ABCD".charAt(i); })
       .join(" and ");
+  }
+
+  /* A classification item has no option letters to name, so its reasoning is
+     introduced by the criterion instead. */
+  function whyHead(q) {
+    return isCls(q) ? "Why these categories: " : "Why " + letters(q) + ": ";
+  }
+
+  function missedHead(q) {
+    return isCls(q)
+      ? "Not answered · the categories marked below are the correct ones: "
+      : "Not answered · correct answer " + letters(q) + ": ";
+  }
+
+  /* The picks of a classification item, padded to one entry per statement. */
+  function clsPicks(q, a) {
+    var picks = [];
+    for (var i = 0; i < q.stmts.length; i++) {
+      picks.push(Array.isArray(a) && a[i] !== undefined && a[i] !== null ? a[i] : null);
+    }
+    return picks;
+  }
+
+  /* One row per statement, with the categories as buttons beside it. `mode` is
+     the caller's: "exam" commits every pick as it happens and never reveals,
+     "review" always reveals, and the study guide and the bank hold the picks
+     until the item is complete and then commit them with Check answer. */
+  function clsBody(q, mode, answer, commit) {
+    var exam = mode === "exam";
+    /* An answer of the wrong length is one the bank kept from a release where
+       this item asked something else: it is ignored rather than revealed. */
+    var placed = Array.isArray(answer) && answer.length === q.stmts.length;
+    var reveal = mode === "review" || (!exam && placed && hasAnswer(answer));
+    var picks = clsPicks(q, answer);
+    var wrap = el("div", "q__cls");
+    var check = null;
+    var buttons = [];
+
+    function complete() {
+      return picks.every(function (x) { return x !== null; });
+    }
+
+    q.stmts.forEach(function (text, si) {
+      var row = el("div", "cls-row");
+      /* A row left empty is not marked wrong — the right category is shown and
+         the verdict on the item says the rest. */
+      if (reveal && picks[si] !== null) {
+        row.classList.add(picks[si] === q.correct[si] ? "is-right" : "is-wrong");
+      }
+      row.appendChild(elRich("div", "cls-row__text", text));
+
+      var cats = el("div", "cls-row__cats");
+      buttons[si] = [];
+      q.cats.forEach(function (label, ci) {
+        var b = el("button", "cls-cat");
+        b.type = "button";
+        b.appendChild(elRich("span", "cls-cat__text", label));
+        if (reveal) {
+          b.disabled = true;
+          if (q.correct[si] === ci) b.classList.add("is-right");
+          else if (picks[si] === ci) b.classList.add("is-wrong");
+        } else {
+          if (picks[si] === ci) b.classList.add("is-picked");
+          b.addEventListener("click", function () {
+            picks[si] = picks[si] === ci ? null : ci;
+            buttons[si].forEach(function (other, oi) {
+              other.classList.toggle("is-picked", picks[si] === oi);
+            });
+            if (exam) commit(picks.slice());
+            else if (check) check.disabled = !complete();
+          });
+        }
+        buttons[si].push(b);
+        cats.appendChild(b);
+      });
+      row.appendChild(cats);
+      wrap.appendChild(row);
+    });
+
+    if (!reveal && !exam) {
+      var actions = el("div", "q__actions");
+      check = el("button", "btn btn--ghost", "Check answer");
+      check.type = "button";
+      check.disabled = !complete();
+      check.addEventListener("click", function () { commit(picks.slice()); });
+      actions.appendChild(check);
+      actions.appendChild(el("span", "q__hint", "place every statement to check"));
+      wrap.appendChild(actions);
+    }
+    return wrap;
+  }
+
+  /* The four lettered options, in the same three modes. A multiple-response
+     item is not committed one option at a time: outside an exam the picks are
+     held here until there are as many as the item asks for, and Check answer
+     commits them. In an exam every pick is saved as it happens — there is no
+     feedback to withhold. */
+  function optsBody(q, mode, answer, commit) {
+    var answered = hasAnswer(answer);
+    var wrap = document.createDocumentFragment();
+    var pending = [];
+    var check = null;
+
+    var opts = el("div", "q__opts");
+    q.opts.forEach(function (text, oi) {
+      var b = el("button", "opt");
+      b.type = "button";
+      b.appendChild(el("span", "opt__letter", "ABCD".charAt(oi)));
+      b.appendChild(elRich("span", "opt__text", text));
+      if (mode === "exam") {
+        if (isPicked(answer, oi)) b.classList.add("is-picked");
+        b.addEventListener("click", function () { commit(togglePick(q, answer, oi)); });
+      } else if (answered) {
+        b.disabled = true;
+        if (isPicked(q.correct, oi)) b.classList.add("is-right");
+        else if (isPicked(answer, oi)) b.classList.add("is-wrong");
+      } else if (isMulti(q)) {
+        b.addEventListener("click", function () {
+          pending = togglePick(q, pending, oi);
+          b.classList.toggle("is-picked", isPicked(pending, oi));
+          check.disabled = pending.length !== q.correct.length;
+        });
+      } else {
+        b.addEventListener("click", function () { commit(oi); });
+      }
+      opts.appendChild(b);
+    });
+    wrap.appendChild(opts);
+
+    if (!answered && isMulti(q) && mode !== "exam") {
+      var row = el("div", "q__actions");
+      check = el("button", "btn btn--ghost", "Check answer");
+      check.type = "button";
+      check.disabled = true;
+      check.addEventListener("click", function () { commit(pending); });
+      row.appendChild(check);
+      row.appendChild(el("span", "q__hint", pickLabel(q).toLowerCase() + " to check"));
+      wrap.appendChild(row);
+    }
+    return wrap;
+  }
+
+  function questionBody(q, mode, answer, commit) {
+    return isCls(q) ? clsBody(q, mode, answer, commit)
+                    : optsBody(q, mode, answer, commit);
   }
 
   /* ---------- inline markup ---------- */
@@ -611,56 +783,18 @@
     var top = el("div", "q__top");
     top.appendChild(el("span", "q__n", "Q" + (qi + 1)));
     if (q.d) top.appendChild(el("span", "q__diff", q.d === "challenging" ? "Challenging" : "Standard"));
-    if (isMulti(q)) top.appendChild(el("span", "q__diff is-multi", pickLabel(q)));
+    if (isMulti(q) || isCls(q)) top.appendChild(el("span", "q__diff is-multi", pickLabel(q)));
     if (answered) {
       top.appendChild(el("span", right ? "q__verdict is-right" : "q__verdict is-wrong",
         right ? "Correct" : "Incorrect"));
     }
     node.appendChild(top);
     node.appendChild(elRich("p", "q__text", q.text));
-
-    /* Multiple response is not committed one option at a time: the picks are
-       held here until there are as many as the item asks for. */
-    var pending = [];
-    var check = null;
-
-    var opts = el("div", "q__opts");
-    q.opts.forEach(function (text, oi) {
-      var b = el("button", "opt");
-      b.type = "button";
-      b.appendChild(el("span", "opt__letter", "ABCD".charAt(oi)));
-      b.appendChild(elRich("span", "opt__text", text));
-      if (answered) {
-        b.disabled = true;
-        if (isPicked(q.correct, oi)) b.classList.add("is-right");
-        else if (isPicked(answer, oi)) b.classList.add("is-wrong");
-      } else if (isMulti(q)) {
-        b.addEventListener("click", function () {
-          pending = togglePick(q, pending, oi);
-          b.classList.toggle("is-picked", isPicked(pending, oi));
-          check.disabled = pending.length !== q.correct.length;
-        });
-      } else {
-        b.addEventListener("click", function () { commit(oi); });
-      }
-      opts.appendChild(b);
-    });
-    node.appendChild(opts);
-
-    if (!answered && isMulti(q)) {
-      var row = el("div", "q__actions");
-      check = el("button", "btn btn--ghost", "Check answer");
-      check.type = "button";
-      check.disabled = true;
-      check.addEventListener("click", function () { commit(pending); });
-      row.appendChild(check);
-      row.appendChild(el("span", "q__hint", pickLabel(q).toLowerCase() + " to check"));
-      node.appendChild(row);
-    }
+    node.appendChild(questionBody(q, "reveal", answer, commit));
 
     if (answered) {
       var why = el("div", "q__why");
-      why.appendChild(el("span", "q__why-head", "Why " + letters(q) + ": "));
+      why.appendChild(el("span", "q__why-head", whyHead(q)));
       why.appendChild(rich(q.why));
       node.appendChild(why);
     }
@@ -834,7 +968,7 @@
     top.appendChild(el("span", "q__n", "Q" + n));
     top.appendChild(el("span", "q__diff", domainOf(q).code + " · " + domainOf(q).short));
     top.appendChild(el("span", "q__diff", diffLabel(q.diff)));
-    if (isMulti(q)) top.appendChild(el("span", "q__diff is-multi", pickLabel(q)));
+    if (isMulti(q) || isCls(q)) top.appendChild(el("span", "q__diff is-multi", pickLabel(q)));
     if (answered && mode !== "exam") {
       top.appendChild(el("span", right ? "q__verdict is-right" : "q__verdict is-wrong",
         right ? "Correct" : "Incorrect"));
@@ -843,60 +977,17 @@
 
     if (q.scen) node.appendChild(el("div", "q__scen", q.scen));
     node.appendChild(elRich("p", "q__text", q.text));
-
-    /* In the bank a multiple-response item is committed by the check button, so
-       its picks are held here until the answer is complete. In an exam every
-       pick is saved as it happens — there is no feedback to withhold. */
-    var pending = [];
-    var check = null;
-
-    var opts = el("div", "q__opts");
-    q.opts.forEach(function (text, oi) {
-      var b = el("button", "opt");
-      b.type = "button";
-      b.appendChild(el("span", "opt__letter", "ABCD".charAt(oi)));
-      b.appendChild(elRich("span", "opt__text", text));
-      if (mode === "exam") {
-        if (isPicked(answer, oi)) b.classList.add("is-picked");
-        b.addEventListener("click", function () { onPick(togglePick(q, answer, oi)); });
-      } else if (answered) {
-        b.disabled = true;
-        if (isPicked(q.correct, oi)) b.classList.add("is-right");
-        else if (isPicked(answer, oi)) b.classList.add("is-wrong");
-      } else if (isMulti(q)) {
-        b.addEventListener("click", function () {
-          pending = togglePick(q, pending, oi);
-          b.classList.toggle("is-picked", isPicked(pending, oi));
-          check.disabled = pending.length !== q.correct.length;
-        });
-      } else {
-        b.addEventListener("click", function () { onPick(oi); });
-      }
-      opts.appendChild(b);
-    });
-    node.appendChild(opts);
-
-    if (!answered && isMulti(q) && mode !== "exam") {
-      var row = el("div", "q__actions");
-      check = el("button", "btn btn--ghost", "Check answer");
-      check.type = "button";
-      check.disabled = true;
-      check.addEventListener("click", function () { onPick(pending); });
-      row.appendChild(check);
-      row.appendChild(el("span", "q__hint", pickLabel(q).toLowerCase() + " to check"));
-      node.appendChild(row);
-    }
+    node.appendChild(questionBody(q, mode, answer, onPick));
 
     if (answered && mode !== "exam") {
       var why = el("div", "q__why");
-      why.appendChild(el("span", "q__why-head", "Why " + letters(q) + ": "));
+      why.appendChild(el("span", "q__why-head", whyHead(q)));
       why.appendChild(rich(q.why));
       node.appendChild(why);
     }
     if (mode === "review" && !answered) {
       var skipped = el("div", "q__why");
-      skipped.appendChild(el("span", "q__why-head",
-        "Not answered · correct answer " + letters(q) + ": "));
+      skipped.appendChild(el("span", "q__why-head", missedHead(q)));
       skipped.appendChild(rich(q.why));
       node.appendChild(skipped);
     }
@@ -1080,7 +1171,7 @@
   var MOCK_NOTES = {
     "CCAR-F": "Five papers of 30 questions, 60 minutes each, weighted exactly like the real exam. A and B are standard, C and D deliberately harder, and those four share no question between them. E is the practical paper: four production scenarios worked end to end, and the only paper that revisits questions from the others.",
     "CCDV-F": "Two full-length papers: 53 questions in 120 minutes, the real exam's own length and domain proportions, with single and multiple-response items mixed as they are on the day. The standard paper sits at the level of the guide's sample items; the challenge paper is deliberately above it. They share no question, so the pair can be sat back to back.",
-    "CCAR-P": "Two full-length papers: 63 standalone items in 120 minutes, the real exam's own length and domain proportions — Integration the largest block, prompting the smallest. The standard paper sits at the level of the study guide's own check-yourself items; the challenge paper is deliberately above it, with longer scenarios and more options that are defensible in isolation. They share no question."
+    "CCAR-P": "Two full-length papers: 63 standalone items in 120 minutes, the real exam's own length and domain proportions — Integration the largest block, prompting the smallest. Single response, multiple response and classification items are mixed as they are on the day. The standard paper sits at the level of the study guide's own check-yourself items; the challenge paper is deliberately above it, with longer scenarios and more options that are defensible in isolation. They share no question."
   };
 
   function renderMockIndex() {
@@ -1150,7 +1241,8 @@
     "CCAR-P": [
       ["63 questions", "Full length, at the blueprint weights: 11 from D1, 8 from D2, 12 from D3, 10 from D4, 9 from D5, 9 from D6 and 4 from D7."],
       ["120 minutes", "The real exam's allowance — about 114 seconds an item. Answer decisively and flag rather than deliberate; the clock keeps running if you leave the page and comes back where it was."],
-      ["Standalone items", "Single and multiple response, never linked into a shared scenario, so no single misread situation costs you several marks. Items that need more than one option say so, and score only when every option matches."],
+      ["Standalone items", "Single response, multiple response and classification, never linked into a shared scenario, so no single misread situation costs you several marks. Items that need more than one option say so, and score only when every option matches."],
+      ["Classification items", "A criterion and five statements, each dropped into its own box — True or False, or which of several strategies the description matches. Every statement has to be placed and the item scores only when all five are right; a half-placed one is kept as you left it but counts as unanswered."],
       ["No feedback until you submit", "Move freely between questions, flag what you want to revisit, and change any answer. Explanations appear on the results page."]
     ]
   };
@@ -1237,17 +1329,22 @@
     bar.appendChild(clock);
     page.appendChild(bar);
 
+    /* A classification item is kept as soon as the first statement is placed, so
+       the picks survive a reload, but it only counts as answered once every
+       statement has been placed — it scores no other way. */
+    var done = m.ids.filter(function (id) { return hasAnswer(a.answers[id]); }).length;
+
     var progress = el("div", "bar");
     var fill = el("span");
-    fill.style.width = Math.round(Object.keys(a.answers).length / m.ids.length * 100) + "%";
+    fill.style.width = Math.round(done / m.ids.length * 100) + "%";
     progress.appendChild(fill);
     page.appendChild(progress);
 
-    /* The card hands back the answer the click produces — an option index, or
-       the remaining picks of a multiple-response item. */
+    /* The card hands back the answer the click produces — an option index, the
+       remaining picks of a multiple-response item, or a category per statement. */
     var card = questionCard(q, idx + 1, "exam", a.answers[qid], function (answer) {
       var answers = Object.assign({}, a.answers);
-      if (hasAnswer(answer)) answers[qid] = answer; else delete answers[qid];
+      if (hasPick(answer)) answers[qid] = answer; else delete answers[qid];
       var attempts = Object.assign({}, state.attempts);
       attempts[m.id] = Object.assign({}, a, { answers: answers });
       save({ attempts: attempts });
@@ -1294,7 +1391,8 @@
     m.ids.forEach(function (id, i) {
       var b = el("button", "exam-grid__n", String(i + 1));
       b.type = "button";
-      if (a.answers[id] !== undefined) b.classList.add("is-done");
+      if (hasAnswer(a.answers[id])) b.classList.add("is-done");
+      else if (hasPick(a.answers[id])) b.classList.add("is-part");
       if (a.flags[id]) b.classList.add("is-flagged");
       if (i === idx) b.classList.add("is-current");
       b.addEventListener("click", function () { goto(i); });
@@ -1304,15 +1402,15 @@
 
     var submitRow = el("div", "exam-submit");
     var left2 = el("div", "exam-submit__note",
-      Object.keys(a.answers).length + " of " + m.ids.length + " answered" +
+      done + " of " + m.ids.length + " answered" +
       (Object.keys(a.flags).length ? " · " + Object.keys(a.flags).length + " flagged" : ""));
     submitRow.appendChild(left2);
     var submit = el("button", "btn btn--primary", "Submit and score");
     submit.type = "button";
     submit.addEventListener("click", function () {
-      var missing = m.ids.length - Object.keys(a.answers).length;
+      var missing = m.ids.length - done;
       if (missing && !window.confirm(missing + " question" + (missing > 1 ? "s are" : " is") +
-        " still unanswered. Unanswered questions score as wrong. Submit anyway?")) return;
+        " still unanswered or incomplete. Those score as wrong. Submit anyway?")) return;
       stopTimer();
       submitAttempt(m);
     });

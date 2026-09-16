@@ -5,7 +5,6 @@ import html, json, random, re, sys, os
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from meta import DOMAIN_META, LEADS
-from cls import CONVERSIONS
 
 OUT = os.path.join(HERE, "..", "..", "assets", "js")
 SRC = json.load(open(os.path.join(HERE, "source.json")))
@@ -23,14 +22,17 @@ def js(s):
 # ---------------------------------------------------------------- items ---
 
 def resolve(name, i, q):
-    """Source item -> { d, text, opts, correct } with classification items
-    replaced by their multiple-response rewrite."""
-    conv = CONVERSIONS.get((name, i))
-    if conv:
-        assert q.get("t") == "cls", (name, i)
-        q = dict(q, **conv)
-    else:
-        assert q.get("t") != "cls", (name, i)
+    """Source item -> { dom, text, why } plus either opts/correct, or the
+    classification item's cats/stmts/correct. A classification item asks for a
+    category per statement, which is how the real paper asks them; 'correct' is
+    then one category index per statement rather than an option index."""
+    if q.get("t") == "cls":
+        assert len(q["cats"]) >= 2 and len(q["s"]) >= 2, (name, i)
+        for text, cat in q["s"]:
+            assert 0 <= cat < len(q["cats"]), (name, i, text)
+        return {"dom": q["d"], "text": q["q"], "type": "cls",
+                "cats": list(q["cats"]), "stmts": [s[0] for s in q["s"]],
+                "correct": [s[1] for s in q["s"]], "why": q["e"]}
     assert len(q["o"]) == 4 and 1 <= len(q["a"]) <= 2
     return {"dom": q["d"], "text": q["q"], "opts": list(q["o"]),
             "correct": sorted(q["a"]), "why": q["e"]}
@@ -46,6 +48,8 @@ def place(items, seed):
     rnd = random.Random(seed)
     n1 = n2 = 0
     for it in items:
+        if it.get("type") == "cls":
+            continue          # no options to place: the answer is a category per statement
         correct = it["correct"]
         if len(correct) == 1:
             slots = [SINGLE_SLOTS[n1 % 4]]; n1 += 1
@@ -66,6 +70,19 @@ def place(items, seed):
 def emit_q(it, indent, head):
     pad = " " * indent
     correct = json.dumps(it["correct"])
+    if it.get("type") == "cls":
+        lines = [pad + head,
+                 pad + '  type: "cls",',
+                 pad + "  text: " + js(it["text"]) + ",",
+                 pad + "  cats: [" + ", ".join(js(c) for c in it["cats"]) + "],",
+                 pad + "  stmts: ["]
+        for stmt in it["stmts"]:
+            lines.append(pad + "    " + js(stmt) + ",")
+        lines[-1] = lines[-1][:-1]
+        lines += [pad + "  ],",
+                  pad + "  correct: " + correct + ",",
+                  pad + "  why: " + js(it["why"]) + " }"]
+        return "\n".join(lines)
     lines = [pad + head,
              pad + "  text: " + js(it["text"]) + ",",
              pad + "  opts: ["]
@@ -95,10 +112,14 @@ CONTENT_HEAD = '''/* CCAR-P — Claude Certified Architect, Professional.
    the question bank and the mock papers read it without any special casing:
 
      concepts[]  one lesson per sub-skill: { ref, title, body, points[], exam[] }
-     questions[] the end-of-domain quiz: { text, opts[4], correct, why }
+     questions[] the end-of-domain quiz, either an option item
+                 { text, opts[4], correct, why } or a classification item
+                 { type: "cls", text, cats[], stmts[], correct, why }
 
    'correct' is an option index, or an array of them for a multiple-response
-   item ("Select TWO") — the CCAR-P exam asks both kinds.
+   item ("Select TWO"). On a classification item it is one category index per
+   statement, in the order the statements are listed — every statement has to
+   be placed, and the item scores only when all of them match.
 
    Body text may carry <b>, <i> and <code> markup; app.js renders those three
    tags as elements and everything else, angle brackets included, as plain text.
@@ -187,11 +208,14 @@ head = '''/* CCAR-P — question bank and mock exams.
    questions laid out at the official domain weights — the shape of the real
    paper (63 scored items, 120 minutes, pass at 720 of 1000).
 
-     window.CCARP_BANK   { id, dom, diff, text, opts[4], correct, why }
+     window.CCARP_BANK   { id, dom, diff, text, opts[4], correct, why }, or a
+                         classification item { id, dom, diff, type: "cls", text,
+                         cats[], stmts[], correct, why }
      window.CCARP_MOCKS  { id, label, diff, minutes, blurb, ids[63] }
 
    'correct' is an option index, or an array of them for a multiple-response
-   item. 'dom' indexes window.CCARP_DOMAINS.
+   item; on a classification item it is one category index per statement, in the
+   order the statements are listed. 'dom' indexes window.CCARP_DOMAINS.
 
    The standard and the challenge paper partition the bank: every item appears in
    exactly one of the two, so the pair can be sat back to back without repetition.

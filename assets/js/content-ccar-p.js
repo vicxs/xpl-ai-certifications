@@ -7,10 +7,14 @@
    the question bank and the mock papers read it without any special casing:
 
      concepts[]  one lesson per sub-skill: { ref, title, body, points[], exam[] }
-     questions[] the end-of-domain quiz: { text, opts[4], correct, why }
+     questions[] the end-of-domain quiz, either an option item
+                 { text, opts[4], correct, why } or a classification item
+                 { type: "cls", text, cats[], stmts[], correct, why }
 
    'correct' is an option index, or an array of them for a multiple-response
-   item ("Select TWO") — the CCAR-P exam asks both kinds.
+   item ("Select TWO"). On a classification item it is one category index per
+   statement, in the order the statements are listed — every statement has to
+   be placed, and the item scores only when all of them match.
 
    Body text may carry <b>, <i> and <code> markup; app.js renders those three
    tags as elements and everything else, angle brackets included, as plain text.
@@ -528,26 +532,32 @@ window.CCARP_DOMAINS = [
         why: "At scale, monolithic context costs more, routes worse and leaks more. Progressive discovery keeps each request lean while retaining access to everything when needed." },
 
       {
-        text: "Which TWO of these RAG activities are post-processing rather than pre-processing?",
-        opts: [
-          "Re-ranking retrieved passages before assembling the prompt",
+        type: "cls",
+        text: "Classify each RAG activity as Pre-processing or Post-processing.",
+        cats: ["Pre-processing", "Post-processing"],
+        stmts: [
           "Chunking documents at section boundaries with overlap",
+          "Re-ranking retrieved passages before assembling the prompt",
+          "Redacting personal data from source documents before embedding",
           "Dropping retrieved chunks below a relevance threshold",
-          "Redacting personal data from source documents before embedding"
+          "Extracting document date and owner into metadata during ingestion"
         ],
-        correct: [0, 2],
-        why: "Anything done to sources before indexing is pre-processing — chunking, redaction, metadata extraction. Anything applied to retrieved hits or to the generated answer is post-processing: re-ranking and threshold filtering both act on what retrieval returned." },
+        correct: [0, 1, 0, 1, 0],
+        why: "Anything done to sources before indexing is pre-processing; anything done to retrieved hits or generated output is post-processing." },
 
       {
-        text: "Which TWO descriptions are structure-aware chunking?",
-        opts: [
-          "Cut contracts at clause headings and manuals at section titles",
-          "Detect topic shifts with embeddings and cut where meaning changes",
+        type: "cls",
+        text: "Classify each description with the chunking strategy it matches.",
+        cats: ["Fixed-size", "Structure-aware", "Semantic", "Parent-child"],
+        stmts: [
           "Split every document into 512-token pieces regardless of content",
+          "Detect topic shifts with embeddings and cut where meaning changes",
+          "Cut contracts at clause headings and manuals at section titles",
+          "Match on small sentence chunks but return the enclosing section to the model",
           "Split a code base by function and class definitions"
         ],
-        correct: [0, 3],
-        why: "Structure-aware chunking uses the document's own boundaries — clauses, headings, functions. Fixed-size ignores structure entirely, and semantic chunking cuts on meaning shifts it detects rather than on markup the document already carries." }
+        correct: [0, 2, 1, 3, 1],
+        why: "Fixed ignores structure; structure-aware uses the document's own boundaries; semantic uses meaning shifts; parent-child separates the matching unit from the context unit." }
     ]
   },
 
@@ -703,15 +713,18 @@ window.CCARP_DOMAINS = [
         why: "Quality does not surface in infrastructure metrics. Scored samples, feedback and fallback rates are quality signals; error rate covers availability." },
 
       {
-        text: "Which TWO statements about evaluation are FALSE?",
-        opts: [
+        type: "cls",
+        text: "Classify each statement about evaluation as True or False.",
+        cats: ["True", "False"],
+        stmts: [
           "The prompt-tuning examples can double as the reported evaluation set if there are enough of them",
           "An LLM judge should be calibrated against human labels before its scores are trusted",
           "A change that raises quality but doubles latency can ship without checking the SLA",
-          "Production failures should become new evaluation cases"
+          "Production failures should become new evaluation cases",
+          "Segmented metrics can reveal failure pockets that the aggregate hides"
         ],
-        correct: [0, 2],
-        why: "Held-out data, judge calibration, multi-axis gates and closing the loop are the core practices. A set you tuned against cannot report your score, and a quality gain that breaks the latency SLA is a regression on the axis the stakeholder named." },
+        correct: [1, 0, 1, 0, 0],
+        why: "Held-out data, judge calibration, multi-axis gates and closing the loop are core evaluation practices." },
 
       {
         text: "A new prompt version has passed the regression set and offline evaluation. Which step comes NEXT before full rollout?",
@@ -854,15 +867,18 @@ window.CCARP_DOMAINS = [
         why: "Fairness needs segmented measurement and human oversight; transparency needs disclosure, explanation and recourse. Aggregate accuracy hides uneven outcomes." },
 
       {
-        text: "Which TWO of these controls are preventive — they remove or block the action itself?",
-        opts: [
+        type: "cls",
+        text: "Classify each control as Preventive, Compensating, or Detective.",
+        cats: ["Preventive", "Compensating", "Detective"],
+        stmts: [
           "Removing a write tool the role never needs",
           "Human approval before an external email is sent",
+          "An output classifier that flags suspicious text after generation",
           "A hook that blocks any shell command containing rm -rf",
           "Audit logging of every tool call"
         ],
-        correct: [0, 2],
-        why: "Removal and programmatic blocks prevent: the action cannot happen. An approval gate is compensating — the capability exists and a human decides. Logging is detective: it tells you afterwards." }
+        correct: [0, 1, 2, 0, 2],
+        why: "Removal and blocks prevent; approval gates compensate; logging and after-the-fact classifiers detect." }
     ]
   },
 
@@ -1005,15 +1021,18 @@ window.CCARP_DOMAINS = [
         why: "Structured feedback loops and honest reporting of distributions manage expectations; cherry-picked demos create false confidence." },
 
       {
-        text: "Which TWO activities belong to the discovery phase?",
-        opts: [
+        type: "cls",
+        text: "Classify each activity by lifecycle phase.",
+        cats: ["Discovery", "Design", "Handoff", "Iteration"],
+        stmts: [
           "Agreeing measurable success criteria with the sponsor",
-          "Choosing between a workflow and an agent and recording the decision",
-          "Interviewing compliance about data-residency constraints",
-          "Delivering runbooks and rollback steps to operations"
+          "Choosing between a workflow and an agent and recording the ADR",
+          "Delivering runbooks and rollback steps to operations",
+          "Feeding monitoring findings into a prompt and retrieval update",
+          "Interviewing compliance about data-residency constraints"
         ],
-        correct: [0, 2],
-        why: "Discovery defines the problem, the measurable target and the constraints. Deciding and recording the architecture is design; runbooks and rollback are handoff." }
+        correct: [0, 1, 2, 3, 0],
+        why: "Discovery defines the problem; design decides and documents; handoff enables operation; iteration closes the loop." }
     ]
   },
 

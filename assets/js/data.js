@@ -91,7 +91,7 @@ const DATA = {
       domainsNote: "Seven domains, weights straight from the blueprint. Integration is the largest — bigger than solution design — and governance, stakeholder work and enablement are 35% between them, which is where an engineering background usually has its gap.",
       /* From the CCAR-P exam guide and the certification pages. */
       exam: [
-        { k: "Question type", v: "Multiple choice and multiple response — standalone items, each says how many options to select" },
+        { k: "Question type", v: "Multiple choice, multiple response and classification — standalone items, each saying how many options to select, or giving a box per statement" },
         { k: "Length", v: "63 scored items in 120 minutes, a shade under two minutes each; allow about 135 minutes of seat time" },
         { k: "Scoring", v: "100–1000 scale, pass at 720; criterion-referenced, so you clear a fixed standard rather than a curve. Domain percentages appear on the report but do not decide the result" },
         { k: "Eligibility", v: "Claude Partner Network members, registering with a partner email on a recognised company domain. No certification prerequisite — Foundations is recommended, not required" },
@@ -103,6 +103,7 @@ const DATA = {
           "Standalone items, not linked scenarios: each question stands alone, so you never lose several marks to one misread situation.",
           "Most items open with two or three sentences of context — an industry, a constraint, a symptom. <b>Read for the constraint, not the technology</b>: it usually eliminates two options on its own.",
           "Multiple-response items state how many to select. Treat \"select two\" as one compound answer and check the pair is internally consistent — one option enforcing a control in code and another enforcing the same control in the prompt cannot both be right.",
+          "Classification items give a criterion and about five statements, each placed in its own box: True or False, pre-processing or post-processing, which chunking strategy a description matches. They score as one compound answer too — <b>every statement has to be right</b> — so place the obvious ones first and spend what is left on the one you are unsure of.",
           "Nearly every item comes down to one of three judgements: is this the simplest thing that meets the requirement, is this control where it can actually be enforced, and was anything measured before it was changed."
         ] },
         { head: "Eliminating distractors", ordered: true, items: [

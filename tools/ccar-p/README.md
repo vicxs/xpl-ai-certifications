@@ -10,18 +10,24 @@ cd tools/ccar-p && python3 emit.py
 - `source.json` — the port itself: the 7 domains with their 38 sub-skills
   (bullet points and traps), the 47 check-yourself questions, and the two
   63-item papers, extracted verbatim from the CCAR-P study-site source. Not
-  hand-edited; anything wrong in it is wrong upstream.
+  hand-edited; anything wrong in it is wrong upstream. Its 21 classification
+  items carry `t: "cls"`, the categories and one category per statement.
 - `meta.py` — the writing that is ours: each domain's `short` name, card
   summary and lead paragraph, and one lead sentence per sub-skill, drawn from
   the CCAR-P study guide's prose (its decision rules and exam traps).
-- `cls.py` — the source's 21 "classify these five statements" exercises,
-  rewritten as four-option multiple-response items. The real paper is 63
-  standalone multiple-choice and multiple-response items, so each exercise
-  becomes an item asking for the two statements that belong to one category.
-  The statements and the reasoning are the source's; the stem and the option
-  set are the rewrite.
 - `emit.py` — resolves the items, places the correct option, and writes both JS
   files.
+
+## The three item types
+
+Option items resolve to `{ text, opts[4], correct, why }`, where `correct` is an
+option index or a pair of them. The source's 21 "classify these five statements"
+exercises resolve to `{ type: "cls", text, cats[], stmts[], correct, why }`
+instead, `correct` being one category index per statement: the real paper asks
+them that way — a criterion, a list of statements and a box per statement — and
+the site now renders them that way. They are not permuted (position carries no
+signal when the answer is a category) and they score all or nothing, exactly as
+a multiple-response item does.
 
 ## Why placement matters
 
