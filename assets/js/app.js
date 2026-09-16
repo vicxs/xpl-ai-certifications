@@ -1,6 +1,6 @@
 /* Cert Wiki — hash-routed static port of the Claude Design source
    'Cert Wiki Flow.dc.html'. Live routes: the introduction, applying & booking,
-   the study guides (#/ccar-f, #/ccar-f/d1 … and #/ccdv-f, #/ccdv-f/d1 …), the
+   the study guides (#/ccar-f, #/ccdv-f, #/ccar-p and their #/<slug>/d1 … pages), the
    question bank (#/bank), the mock papers (#/mock, #/mock/a, #/mock/a/result)
    and the last result (#/result). Certifications without content keep the
    "soon" treatment in the sidebar. */
@@ -52,7 +52,7 @@
 
   /* Certifications whose study guide is written. The others stay "soon" in the
      sidebar and on the roadmap until their content lands. */
-  var GUIDES = { "CCAR-F": "#/ccar-f", "CCDV-F": "#/ccdv-f" };
+  var GUIDES = { "CCAR-F": "#/ccar-f", "CCDV-F": "#/ccdv-f", "CCAR-P": "#/ccar-p" };
 
   function hasGuide(id) { return Object.prototype.hasOwnProperty.call(GUIDES, id); }
 
@@ -771,7 +771,8 @@
      results pages work the same whichever exam they belong to. */
   var PRACTICE = [
     { certId: "CCAR-F", bank: window.CCARF_BANK, mocks: window.CCARF_MOCKS },
-    { certId: "CCDV-F", bank: window.CCDVF_BANK, mocks: window.CCDVF_MOCKS }
+    { certId: "CCDV-F", bank: window.CCDVF_BANK, mocks: window.CCDVF_MOCKS },
+    { certId: "CCAR-P", bank: window.CCARP_BANK, mocks: window.CCARP_MOCKS }
   ].filter(function (p) { return p.bank && p.bank.length && p.mocks && p.mocks.length; });
 
   var BANK = [];
@@ -1083,7 +1084,8 @@
   /* One line per certification, shown above its papers on the index. */
   var MOCK_NOTES = {
     "CCAR-F": "Five papers of 30 questions, 60 minutes each, weighted exactly like the real exam. A and B are standard, C and D deliberately harder, and those four share no question between them. E is the practical paper: four production scenarios worked end to end, and the only paper that revisits questions from the others.",
-    "CCDV-F": "Two full-length papers: 53 questions in 120 minutes, the real exam's own length and domain proportions, with single and multiple-response items mixed as they are on the day. The standard paper sits at the level of the guide's sample items; the challenge paper is deliberately above it. They share no question, so the pair can be sat back to back."
+    "CCDV-F": "Two full-length papers: 53 questions in 120 minutes, the real exam's own length and domain proportions, with single and multiple-response items mixed as they are on the day. The standard paper sits at the level of the guide's sample items; the challenge paper is deliberately above it. They share no question, so the pair can be sat back to back.",
+    "CCAR-P": "Two full-length papers: 63 standalone items in 120 minutes, the real exam's own length and domain proportions — Integration the largest block, prompting the smallest. The standard paper sits at the level of the study guide's own check-yourself items; the challenge paper is deliberately above it, with longer scenarios and more options that are defensible in isolation. They share no question."
   };
 
   function renderMockIndex() {
@@ -1148,6 +1150,12 @@
       ["53 questions", "Full length, at the official weights: 8 from D1, 17 or 18 from D2, 2 from D3, 1 from D4, 9 from D5, 6 from D6, 4 from D7 and 5 or 6 from D8."],
       ["120 minutes", "The real exam's allowance — a little over two minutes an item. The clock keeps running if you leave the page and comes back where it was."],
       ["Single and multiple response", "Items that need more than one option say so. A multiple-response item scores only when every option matches."],
+      ["No feedback until you submit", "Move freely between questions, flag what you want to revisit, and change any answer. Explanations appear on the results page."]
+    ],
+    "CCAR-P": [
+      ["63 questions", "Full length, at the blueprint weights: 11 from D1, 8 from D2, 12 from D3, 10 from D4, 9 from D5, 9 from D6 and 4 from D7."],
+      ["120 minutes", "The real exam's allowance — about 114 seconds an item. Answer decisively and flag rather than deliberate; the clock keeps running if you leave the page and comes back where it was."],
+      ["Standalone items", "Single and multiple response, never linked into a shared scenario, so no single misread situation costs you several marks. Items that need more than one option say so, and score only when every option matches."],
       ["No feedback until you submit", "Move freely between questions, flag what you want to revisit, and change any answer. Explanations appear on the results page."]
     ]
   };

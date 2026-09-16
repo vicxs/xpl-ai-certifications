@@ -22,21 +22,27 @@ render standalone — this is plain HTML, CSS and vanilla JS with no build step.
   then a page per domain (`#/ccdv-f/d1` … `#/ccdv-f/d8`) with one lesson per
   official sub-skill — 25 of them, each with its own weight and the traps its
   distractors are built from — and a quiz of three to eight questions per domain.
-- **Question bank** (`#/bank`) — 125 CCAR-F items and 106 CCDV-F items, one exam at a
-  time, filterable by domain, by difficulty and by whether you have answered them
+- **CCAR-P study guide** — the Architect Professional theory: an overview with the
+  exam format, how the items behave, the four distractor heuristics and the booking
+  rules (`#/ccar-p`), then a page per domain (`#/ccar-p/d1` … `#/ccar-p/d7`) with
+  one lesson per blueprint sub-skill — 38 of them, each with its bullet points and
+  the traps its distractors are built from — and a quiz of three to ten questions
+  per domain.
+- **Question bank** (`#/bank`) — 125 CCAR-F items, 106 CCDV-F items and 126 CCAR-P
+  items, one exam at a time, filterable by domain, by difficulty and by whether you have answered them
   (or got them wrong). The reasoning appears as soon as you answer.
 - **Mock exams** (`#/mock`) — CCAR-F's five timed 30-question papers (`#/mock/a` …
   `#/mock/e`) at the real domain weights: A and B standard, C and D harder, E the
   practical paper, 60 minutes each. CCDV-F's two full-length papers
   (`#/mock/dv-standard`, `#/mock/dv-challenge`): 53 questions in 120 minutes, the
-  real exam's own length and proportions. On every paper the clock survives a
+  real exam's own length and proportions. CCAR-P's two full-length papers
+  (`#/mock/ap-standard`, `#/mock/ap-challenge`): 63 standalone items in 120 minutes
+  at the blueprint weights. On every paper the clock survives a
   reload, navigation is free, questions can be flagged, and nothing is revealed
   until you submit.
 - **Results** (`#/mock/a/result`, or `#/result` for the most recent) — scaled score
   with a pass verdict, a per-domain breakdown, and every question reviewed with its
   explanation.
-
-CCAR-P is shown in the navigation with a `soon` tag.
 
 ## Layout
 
@@ -47,13 +53,15 @@ assets/js/content-ccar-f.js   CCAR-F domains: lessons and quiz questions
 assets/js/questions-ccar-f.js CCAR-F question bank (125 items) and the five papers
 assets/js/content-ccdv-f.js   CCDV-F domains: lessons and quiz questions
 assets/js/questions-ccdv-f.js CCDV-F question bank (106 items) and the two papers
-assets/js/data.js             catalogue: certs, the CCAR-P outline, apply steps
+assets/js/content-ccar-p.js   CCAR-P domains: lessons and quiz questions
+assets/js/questions-ccar-p.js CCAR-P question bank (126 items) and the two papers
+assets/js/data.js             catalogue: certs, exam facts, apply steps
 assets/js/app.js              hash router, rendering, localStorage progress
 ```
 
-Both `content-*.js` files must load before `data.js` — the catalogue reads
-`window.CCARF_DOMAINS` and `window.CCDVF_DOMAINS` when they are defined. The
-`questions-*.js` files only have to load before `app.js`.
+Every `content-*.js` file must load before `data.js` — the catalogue reads
+`window.CCARF_DOMAINS`, `window.CCDVF_DOMAINS` and `window.CCARP_DOMAINS` when
+they are defined. The `questions-*.js` files only have to load before `app.js`.
 
 ## CCAR-F content
 
@@ -103,6 +111,29 @@ partial credit, as on the real exam. In the study guide and the bank the picks a
 held until the item is complete and then committed with **Check answer**; in a
 paper each pick is saved as it happens, since there is no feedback to withhold.
 Single-response answers saved by an earlier release still read back unchanged.
+
+## CCAR-P content
+
+Ported from the CCAR-P study guide and study-site sources, whose domains,
+sub-skills and weights come from the official exam guide: 7 domains, 38
+sub-skills, weights 17 / 13 / 19 / 16 / 14 / 14 / 7. One lesson per sub-skill, in
+the same shape as CCDV-F minus `weight` — the CCAR-P blueprint publishes weights
+per domain only, not per sub-skill:
+
+```js
+concepts[]   // { ref, title, body, points[], exam[] }
+questions[]  // the end-of-domain quiz: { text, opts[4], correct, why }
+```
+
+Both files are generated; the authoring source is in `tools/ccar-p/`. The domain
+framing and the lead sentence on each lesson are written from the study guide's
+own prose (its decision rules and exam traps); everything else — bullet points,
+traps, questions and reasoning — is the port. See `tools/ccar-p/README.md`.
+
+Note two facts that differ from the placeholder outline this release replaces:
+CCAR-P has **no certification prerequisite** (Foundations is recommended, not
+required) and the paper is **63 items**, not the 60 the design source showed.
+Eligibility is the Claude Partner Network membership, not a prior exam.
 
 ## Question bank and mock exams
 
@@ -157,6 +188,24 @@ one of the two, at the official weights over 53 questions (8 / 17–18 / 2 / 1 /
 paper the order was shuffled once, at porting time, so a run does not walk the
 syllabus domain by domain. Unlike CCAR-F's, this file is not generated from a
 `tools/` source: it is the port itself, and is edited directly.
+
+`assets/js/questions-ccar-p.js` holds CCAR-P's 126 items — the two full-length
+papers of the study-site source — in the same shape:
+
+```js
+window.CCARP_BANK  // { id, dom, diff, text, opts[4], correct, why }
+window.CCARP_MOCKS // { id, label, diff, minutes, blurb, ids[63] }
+```
+
+Again the two papers partition the bank, at the blueprint weights over 63
+questions (11 / 8 / 12 / 10 / 9 / 9 / 4), and the order within a paper is shuffled
+once at build time. The source it came from shuffled options at runtime and so
+kept its correct answer in position B in about 90% of items; `emit.py` permutes
+instead, leaving the answer in each of the four positions about a quarter of the
+time and the longest option correct 25% of the time — chance, not a signal. The
+source's 21 "classify these five statements" exercises become four-option
+multiple-response items, because the real paper is standalone multiple-choice and
+multiple-response only.
 
 ## Running locally
 

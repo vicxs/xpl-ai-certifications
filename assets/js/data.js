@@ -2,10 +2,8 @@
 // from the Claude Design source (project 9eda2a04-784c-4de9-b46d-c9d2151dbd6e,
 // file 'Cert Wiki Flow.dc.html').
 //
-// CCAR-F's domains live in content-ccar-f.js and CCDV-F's in content-ccdv-f.js,
-// both written from the official exam guides — those files must load first.
-// CCAR-P still carries the design's placeholder outline; it gets the same
-// treatment when its guide lands.
+// Each certification's domains live in its own content-<code>.js, written from
+// the official exam guides — those files must load first.
 
 const DATA = {
   order: ["CCAR-F", "CCDV-F", "CCAR-P"],
@@ -87,78 +85,56 @@ const DATA = {
     },
     "CCAR-P": {
       code: "CCAR-P", name: "Claude Certified Architect — Professional", short: "Architect Pro",
-      blurb: "Advanced solution design, integration, governance and evaluation for senior architects delivering production systems. Requires the Architect Foundations certification.",
+      blurb: "Advanced solution design, integration, governance, evaluation and stakeholder work for senior architects delivering production Claude systems. The credential describes an architect who has operated a system, not one who has drawn one.",
       items: "63", time: "120 min", fee: "$175", level: "Architect · Professional",
       biggest: "Integration (19%)",
-      domains: [
-        { code: "D1", name: "Integration at Scale", short: "Integration", weight: 19,
-          summary: "Enterprise systems, identity, data boundaries, throughput.",
-          intro: "Integration questions with real constraints: identity propagation, data residency, throughput ceilings and what you do when a downstream system is the bottleneck.",
-          concepts: [
-            { title: "Identity propagation", body: "The agent acts on behalf of a user; permissions must be evaluated with that user's identity, not the service account's." },
-            { title: "Throughput planning", body: "Design for the slowest downstream dependency and queue rather than dropping work." }
-          ],
-          questions: [
-            { d: "challenging", text: "An agent can read any record because it uses a service account. Correct architecture:", opts: ["Keep the service account and filter results in the prompt", "Evaluate permissions with the requesting user's identity before returning data", "Ask the model not to reveal unauthorised records", "Log access and review it monthly"], correct: 1, why: "Authorisation belongs in the data layer with the real identity — never in prompt instructions." }
-          ] },
-        { code: "D2", name: "Solution Design", short: "Solution design", weight: 18,
-          summary: "Requirements to architecture, trade-off documentation, build vs. buy.",
-          intro: "Given a business problem and constraints, choose an architecture and defend the trade-off in writing.",
-          concepts: [
-            { title: "Constraints first", body: "Latency, cost ceiling, accuracy floor and data boundaries narrow the design space before any pattern is chosen." },
-            { title: "Documented trade-offs", body: "Every choice records what was given up; that record is what reviews actually assess." }
-          ],
-          questions: [
-            { d: "standard", text: "A client needs sub-second answers with a hard accuracy floor. Your first move is to:", opts: ["Pick the largest model available", "Quantify both constraints and test whether they can be met simultaneously", "Add a multi-agent debate for accuracy", "Cache everything"], correct: 1, why: "Professional-level questions reward quantifying constraints before selecting a pattern." }
-          ] },
-        { code: "D3", name: "Governance & Compliance", short: "Governance", weight: 17,
-          summary: "Policy, auditability, data handling, human oversight.",
-          intro: "What an auditor asks for: what was sent, what came back, who approved it, and how that is retained.",
-          concepts: [
-            { title: "Auditable by construction", body: "Log inputs, outputs, tool calls and approvals with correlation ids from day one." },
-            { title: "Human oversight of record", body: "Name who is accountable for automated decisions and how a decision is appealed." }
-          ],
-          questions: [
-            { d: "challenging", text: "An auditor asks why a specific automated decision was made six months ago. You need:", opts: ["The current system prompt", "Retained per-request logs of inputs, outputs, tool calls and the prompt version in force", "A screenshot of the dashboard", "The model provider's documentation"], correct: 1, why: "Reconstruction requires versioned, per-request records — not the present configuration." }
-          ] },
-        { code: "D4", name: "Evaluation & Observability", short: "Evaluation", weight: 16,
-          summary: "Production evals, drift detection, dashboards that matter.",
-          intro: "Measuring a live system: which signals to watch, how to detect drift early, and how to keep an eval set honest over time.",
-          concepts: [
-            { title: "Online plus offline", body: "Offline evals catch regressions before release; online signals catch drift after it." },
-            { title: "Guard the eval set", body: "Keep a holdout that never informs prompt edits, or your scores stop meaning anything." }
-          ],
-          questions: [
-            { d: "standard", text: "Offline scores are flat but user complaints rise. Most likely explanation:", opts: ["The model degraded silently", "Real traffic has drifted away from the eval set's distribution", "Token prices changed", "The dashboard is broken"], correct: 1, why: "Distribution drift is the classic gap between stable offline scores and worsening real-world experience." }
-          ] },
-        { code: "D5", name: "Multi-agent Orchestration", short: "Orchestration", weight: 16,
-          summary: "Coordination, shared state, cost containment, deadlock avoidance.",
-          intro: "Advanced orchestration: who owns state, how agents hand off, and how you keep a multi-agent system from costing ten times its value.",
-          concepts: [
-            { title: "One owner per piece of state", body: "Shared mutable state across agents is the main source of incoherent behaviour." },
-            { title: "Cost containment", body: "Budget tokens per run and abort early; multi-agent cost grows multiplicatively." }
-          ],
-          questions: [
-            { d: "challenging", text: "A three-agent pipeline produces contradictory outputs on the same input. Most likely cause:", opts: ["Temperature is too low", "Two agents mutate the same state with no clear owner", "The context window is too large", "Streaming is disabled"], correct: 1, why: "Unowned shared state is the standard root cause of incoherence in orchestration questions." }
-          ] },
-        { code: "D6", name: "Migration & Operations", short: "Migration & ops", weight: 14,
-          summary: "Model upgrades, rollout strategy, incident response, runbooks.",
-          intro: "Operating the system over time: how a model upgrade is rolled out, what a rollback looks like, and what the on-call runbook says.",
-          concepts: [
-            { title: "Shadow then shift", body: "Run the new model in shadow against real traffic, compare on evals, then shift a percentage at a time." },
-            { title: "Rollback path", body: "Pin model and prompt versions together so a rollback restores a known-good pair." }
-          ],
-          questions: [
-            { d: "standard", text: "Safest way to adopt a new model version in production:", opts: ["Switch everything at once and watch the dashboard", "Shadow real traffic, compare on the eval set, then ramp by percentage", "Let users opt in manually", "Wait for the next release"], correct: 1, why: "Shadow, compare, ramp — with a pinned rollback pair — is the expected operational answer." }
-          ] }
-      ] }
+      domainsNote: "Seven domains, weights straight from the blueprint. Integration is the largest — bigger than solution design — and governance, stakeholder work and enablement are 35% between them, which is where an engineering background usually has its gap.",
+      /* From the CCAR-P exam guide and the certification pages. */
+      exam: [
+        { k: "Question type", v: "Multiple choice and multiple response — standalone items, each says how many options to select" },
+        { k: "Length", v: "63 scored items in 120 minutes, a shade under two minutes each; allow about 135 minutes of seat time" },
+        { k: "Scoring", v: "100–1000 scale, pass at 720; criterion-referenced, so you clear a fixed standard rather than a curve. Domain percentages appear on the report but do not decide the result" },
+        { k: "Eligibility", v: "Claude Partner Network members, registering with a partner email on a recognised company domain. No certification prerequisite — Foundations is recommended, not required" },
+        { k: "Target candidate", v: "3+ years in systems architecture or platform engineering, and 6+ months with Claude or a comparable LLM system in production" },
+        { k: "Technologies", v: "Claude API · Claude Agent SDK · Claude Code · Model Context Protocol · retrieval and evaluation tooling" }
+      ],
+      panels: [
+        { head: "How the questions behave", items: [
+          "Standalone items, not linked scenarios: each question stands alone, so you never lose several marks to one misread situation.",
+          "Most items open with two or three sentences of context — an industry, a constraint, a symptom. <b>Read for the constraint, not the technology</b>: it usually eliminates two options on its own.",
+          "Multiple-response items state how many to select. Treat \"select two\" as one compound answer and check the pair is internally consistent — one option enforcing a control in code and another enforcing the same control in the prompt cannot both be right.",
+          "Nearly every item comes down to one of three judgements: is this the simplest thing that meets the requirement, is this control where it can actually be enforced, and was anything measured before it was changed."
+        ] },
+        { head: "Eliminating distractors", ordered: true, items: [
+          "<b>Simplest sufficient wins.</b> Between a workflow and an agent, a single call and a chain, one model and an ensemble — take the simpler one unless the scenario names a constraint it cannot meet.",
+          "<b>Enforcement beats instruction.</b> Where the requirement is a guarantee, the answer is a mechanism: a validator, a permission filter, a hard limit, a gate. Never prompt wording.",
+          "<b>Measure before you change.</b> When a scenario describes a problem, the right first step is usually diagnostic — inspect the retrieved chunks, read the traces, run the eval set — not a fix applied blind.",
+          "<b>Absolutes are usually wrong.</b> Options containing \"eliminates\", \"guarantees\", \"never\" or \"always\" rarely survive, because this field does not offer those.",
+          "On pacing: about 114 seconds an item. Answer decisively and flag rather than deliberate — two questions you never reached cost more than one you answered on instinct."
+        ] },
+        { head: "Booking, retakes and renewal", items: [
+          "Register through the Partner Academy with a partner email, then schedule through Pearson VUE: online proctored or a test centre. Registration stays valid for five years once purchased, so you can book when you are ready.",
+          "$175 USD an attempt. Free to reschedule up to 24 hours before; inside that window the fee is forfeited.",
+          "Government photo ID at check-in, with the name matching your Pearson profile exactly — submit corrections at least 24 hours ahead.",
+          "Retakes: 14 days after a first failure, 30 after a second, 90 after a third, up to four attempts per rolling 12 months, full fee each time.",
+          "Score on screen at the end, badge by email. The credential is valid for 12 months and renews with a free, non-proctored assessment; let it lapse and the full paid exam is required again."
+        ] },
+        { head: "Where to put your hours", items: [
+          "Integration (19%) and solution design (17%) are a third of the paper, but governance, stakeholder work and enablement are 35% between them and are the cheapest marks to gain, because the material is learnable rather than experiential.",
+          "Prompting is only 13%. It is the most familiar topic and the one candidates over-prepare; spend that time on domains 5 and 6 instead.",
+          "Build and operate one end-to-end solution with retrieval, evaluation and observability. The objectives are written in the language of someone who has run a system, and reading alone tends not to get people over the line."
+        ] }
+      ],
+      footnote: "Written from the CCAR-P exam guide, the certification pages and the Claude platform, Claude Code and MCP documentation. Questions here are original: the real bank is under NDA, and prices used in cost questions are illustrative. Policies change — confirm the current fee, item count, eligibility and duration with the certifying organisation before you book.",
+      domains: window.CCARP_DOMAINS
+    }
   },
   mocks: [
     { id: "A", diff: "Standard" }, { id: "B", diff: "Standard" },
     { id: "C", diff: "Challenging" }, { id: "D", diff: "Challenging" }
   ],
   applySteps: [
-    { title: "Confirm you meet the prerequisites", body: "Foundations exams are open to anyone. Architect Professional requires a valid Architect Foundations certification on the same account.", meta: "5 min" },
+    { title: "Confirm you meet the prerequisites", body: "No exam has another certification as a prerequisite — Architect Professional recommends Foundations without requiring it. All three do require a Claude Partner Network membership and a partner email on a recognised company domain; personal addresses are rejected.", meta: "5 min" },
     { title: "Create your account on the certification platform", body: "Use your work email and make sure the name on the account matches your photo ID exactly — mismatches are the most common cause of a cancelled session.", meta: "10 min" },
     { title: "Request the voucher internally", body: "Open a request with your manager and the L&D channel. Include the exam code and your target window; vouchers take a few working days.", meta: "2–5 working days" },
     { title: "Book the slot and run the system check", body: "Book at least a week out, then run the proctor's system check on the machine and network you will actually use.", meta: "15 min" },
