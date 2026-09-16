@@ -130,10 +130,6 @@ const DATA = {
       domains: window.CCARP_DOMAINS
     }
   },
-  mocks: [
-    { id: "A", diff: "Standard" }, { id: "B", diff: "Standard" },
-    { id: "C", diff: "Challenging" }, { id: "D", diff: "Challenging" }
-  ],
   applySteps: [
     { title: "Confirm you meet the prerequisites", body: "No exam has another certification as a prerequisite — Architect Professional recommends Foundations without requiring it. All three do require a Claude Partner Network membership and a partner email on a recognised company domain; personal addresses are rejected.", meta: "5 min" },
     { title: "Create your account on the certification platform", body: "Use your work email and make sure the name on the account matches your photo ID exactly — mismatches are the most common cause of a cancelled session.", meta: "10 min" },

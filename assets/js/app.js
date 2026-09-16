@@ -1,9 +1,9 @@
 /* Cert Wiki — hash-routed static port of the Claude Design source
    'Cert Wiki Flow.dc.html'. Live routes: the introduction, applying & booking,
    the study guides (#/ccar-f, #/ccdv-f, #/ccar-p and their #/<slug>/d1 … pages), the
-   question bank (#/bank), the mock papers (#/mock, #/mock/a, #/mock/a/result)
-   and the last result (#/result). Certifications without content keep the
-   "soon" treatment in the sidebar. */
+   question bank (#/bank), the mock papers (#/mock, #/mock/ar-standard and
+   #/mock/ar-standard/result) and the last result (#/result). Certifications
+   without content keep the "soon" treatment in the sidebar. */
 
 (function () {
   "use strict";
@@ -1169,7 +1169,7 @@
 
   /* One line per certification, shown above its papers on the index. */
   var MOCK_NOTES = {
-    "CCAR-F": "Five papers of 30 questions, 60 minutes each, weighted exactly like the real exam. A and B are standard, C and D deliberately harder, and those four share no question between them. E is the practical paper: four production scenarios worked end to end, and the only paper that revisits questions from the others.",
+    "CCAR-F": "Three full-length papers: 60 questions in 120 minutes, the real exam's own length and domain proportions. The standard and the challenge paper partition the bank — they share no question, so the pair can be sat back to back — and the challenge paper is deliberately the harder of the two. The practical paper works the four production scenarios end to end, carries five situations the others never put to you, and is the only paper that revisits their questions.",
     "CCDV-F": "Two full-length papers: 53 questions in 120 minutes, the real exam's own length and domain proportions, with single and multiple-response items mixed as they are on the day. The standard paper sits at the level of the guide's sample items; the challenge paper is deliberately above it. They share no question, so the pair can be sat back to back.",
     "CCAR-P": "Two full-length papers: 63 standalone items in 120 minutes, the real exam's own length and domain proportions — Integration the largest block, prompting the smallest. Single response, multiple response and classification items are mixed as they are on the day. The standard paper sits at the level of the study guide's own check-yourself items; the challenge paper is deliberately above it, with longer scenarios and more options that are defensible in isolation. They share no question."
   };
@@ -1227,8 +1227,8 @@
 
   var EXAM_RULES = {
     "CCAR-F": [
-      ["30 questions", "The same domain weights as the real paper: 8 from D1, 5 from D2, 6 from D3, 6 from D4 and 5 from D5."],
-      ["60 minutes", "Half the real exam's length for half its questions. The clock keeps running if you leave the page and comes back where it was."],
+      ["60 questions", "Full length, at the real paper's weights: 16 from D1, 10 from D2, 12 from D3, 12 from D4 and 10 from D5."],
+      ["120 minutes", "The real exam's allowance — two minutes an item. The clock keeps running if you leave the page and comes back where it was."],
       ["No feedback until you submit", "You can move freely between questions and change any answer. Explanations appear on the results page."],
       ["No guessing penalty", "An unanswered question scores the same as a wrong one, so answer everything before the clock runs out."]
     ],
@@ -1533,7 +1533,8 @@
   }
 
   function renderResultShortcut() {
-    var last = state.lastMock && state.scores[state.lastMock] ? state.lastMock : null;
+    var last = state.lastMock && state.scores[state.lastMock] && mock(state.lastMock)
+      ? state.lastMock : null;
     if (!last) {
       MOCKS.forEach(function (m) { if (state.scores[m.id]) last = m.id; });
     }
@@ -1543,7 +1544,7 @@
     page.appendChild(el("div", "page__eyebrow", "Practice"));
     page.appendChild(el("h1", "page__title", "My last result"));
     page.appendChild(el("p", "page__lead",
-      "Nothing scored yet. Sit one of the five papers and your result — total, pass verdict and a domain breakdown — shows up here."));
+      "Nothing scored yet. Sit one of the papers and your result — total, pass verdict and a domain breakdown — shows up here."));
     var actions = el("div", "hero__actions");
     var a = el("a", "btn btn--primary", "Go to the mock exams →");
     a.href = "#/mock";
@@ -1562,7 +1563,7 @@
     "#/bank": "bank", "#/mock": "mock", "#/result": "result"
   };
 
-  /* #/mock/c and #/mock/c/result. */
+  /* #/mock/ar-practical and #/mock/ar-practical/result. */
   var MOCK_HASH = /^#\/mock\/([a-z0-9-]+)(\/result)?$/;
 
   function matchMock(hash) {

@@ -9,12 +9,14 @@
      · distractors are the answers the guide's explanations call out as the
        tempting ones, not filler.
 
-   Papers A–D partition the 120 core items: each appears in exactly one of them,
-   at the real exam's domain weights (27/18/20/20/15) over 30 items. A and B are
-   the standard pair, C and D the harder pair. Paper E is the practical paper —
-   it carries the five items from the practical test that the core bank does not
-   cover, and fills its remaining 25 slots from the same four scenarios, so it
-   is the one paper that repeats questions A–D already ask.
+   Three full-length papers, 60 items each at the real exam's domain weights
+   (27/18/20/20/15, so 16/10/12/12/10). The standard and the challenge paper
+   partition the 120 core items — every item sits in exactly one of the two, so
+   the pair can be sat back to back. The practical paper carries the five items
+   from the practical test that the core bank does not cover and fills its other
+   55 slots from the same four scenarios (CI, multi-agent research, customer
+   support, code generation), standard and challenging mixed, so it is the one
+   paper that repeats questions the other two already ask.
 
    Loaded before data.js, alongside content-ccar-f.js. */
 
@@ -34,11 +36,11 @@ window.CCARF_BANK = [
     text: "First-contact resolution sits at 55% against a target of 80%. Logs show the agent escalating standard replacements for damaged goods with photo evidence, while handling policy exceptions on its own. What improves the calibration most effectively?",
     opts: [
       "Run sentiment analysis on the customer's messages and escalate automatically once frustration passes a threshold.",
-      "Explicit escalation criteria in the system prompt, with few-shot examples of what to escalate and what to resolve.",
       "Have the agent rate its own confidence from one to ten before each reply, routing anything below a threshold to a human.",
-      "Train a separate classifier on historical tickets to predict which requests need a human before the agent starts work."
+      "Train a separate classifier on historical tickets to predict which requests need a human before the agent starts work.",
+      "Explicit escalation criteria in the system prompt, with few-shot examples of what to escalate and what to resolve."
     ],
-    correct: 1,
+    correct: 3,
     why: "The agent has no stated boundary between the cases it owns and the cases it does not, so it draws one itself and gets it wrong in both directions. Criteria with worked examples supply that boundary. A self-rated score, a trained classifier and a sentiment threshold all build machinery around the decision without ever stating what the decision is." },
 
   { id: "d1c02", dom: 0, diff: "challenging", scen: "Multi-agent research system",
@@ -254,11 +256,11 @@ window.CCARF_BANK = [
     text: "The document analysis subagent reaches a PDF it cannot parse. You are designing how that failure is handled. What should the subagent do with it?",
     opts: [
       "Skip the corrupted document silently and carry on with the rest, so the workflow is never interrupted.",
-      "Return an error to the coordinator with the context around it, and let the coordinator decide how to proceed.",
       "Retry the parse three times with exponential backoff before reporting the failure upstream at all.",
-      "Raise an exception that terminates the whole research workflow, since the input set is incomplete."
+      "Raise an exception that terminates the whole research workflow, since the input set is incomplete.",
+      "Return an error to the coordinator with the context around it, and let the coordinator decide how to proceed."
     ],
-    correct: 1,
+    correct: 3,
     why: "The coordinator is the only part of the system placed to choose between skipping the file, trying another parser and telling the user, and it can only choose if it is told. Silence hides a gap in the evidence, backoff cannot repair a corrupt file, and ending the run throws away everything that succeeded." },
 
   { id: "d1s02", dom: 0, diff: "standard", scen: "Agentic AI tools",
@@ -540,11 +542,11 @@ window.CCARF_BANK = [
     text: "Two workflows run on synchronous calls: a pre-merge check that blocks the merge until it finishes, and a technical-debt report generated overnight and read the next morning. Your manager proposes moving both to the Message Batches API for the 50% saving. How do you answer?",
     opts: [
       "Move both, and fall back to a synchronous call whenever a batch is taking longer than the pipeline can wait.",
+      "Move the technical-debt report to the Batches API and keep the pre-merge check synchronous.",
       "Keep both synchronous, because batch results come back in an order the pipeline cannot rely on.",
-      "Move both, and poll for batch status so the pipeline knows exactly when each set of results is ready.",
-      "Move the technical-debt report to the Batches API and keep the pre-merge check synchronous."
+      "Move both, and poll for batch status so the pipeline knows exactly when each set of results is ready."
     ],
-    correct: 3,
+    correct: 1,
     why: "The Batches API carries no latency guarantee and can take up to 24 hours, which an overnight report absorbs and a developer waiting on a merge does not. A mid-run fallback pays for the same work twice, polling does not shorten the wait, and result ordering is not what rules batching out." },
 
   { id: "d3s06", dom: 2, diff: "standard", scen: "Code generation with Claude Code",
@@ -913,12 +915,12 @@ window.CCARF_BANK = [
   { id: "d2p01", dom: 1, diff: "challenging", scen: "Multi-agent research system",
     text: "Requests like \"analyze the uploaded quarterly report\" reach the web-search agent 45% of the time. That agent owns analyze_content, \"analyzes content and extracts key information\"; the document analysis agent owns analyze_document, \"analyzes documents and extracts key information\". How do you fix the misrouting?",
     opts: [
+      "Rename the web-search tool to extract_web_results and describe it as processing information retrieved from web search and URLs.",
       "Add a pre-routing classifier that decides whether a request concerns an uploaded file or web content before the coordinator delegates it.",
       "Extend the document analysis description with usage examples — uploaded PDFs, Word documents, spreadsheets — and leave the web-search tool as it stands.",
-      "Rename the web-search tool to extract_web_results and describe it as processing information retrieved from web search and URLs.",
       "Give the coordinator few-shot examples of correct routing: an uploaded quarterly report to document analysis, a web page to web search."
     ],
-    correct: 2,
+    correct: 0,
     why: "Both names and both descriptions say the same thing, so nothing in the definitions separates the tools. Renaming the web-search tool and rewriting its description around web search and URLs removes that overlap itself. A classifier and few-shot routing both leave the ambiguity in place and steer around it, and widening one description still leaves the other claiming the same ground." },
 
   { id: "d4c07", dom: 3, diff: "challenging", scen: "Customer support agent",
@@ -1166,12 +1168,12 @@ window.CCARF_BANK = [
   { id: "d5p01", dom: 4, diff: "standard", scen: "Multi-agent research system",
     text: "The web-search subagent times out partway through a complex topic. What does it have to hand back to the coordinator for intelligent recovery to be possible?",
     opts: [
-      "Structured error context: the failure type, the query it ran, any partial results and the alternatives worth trying.",
       "A generic \"search unavailable\" status, returned once its own exponential-backoff retries are exhausted.",
       "The timeout exception itself, propagated to the top-level handler so the research workflow stops there.",
+      "Structured error context: the failure type, the query it ran, any partial results and the alternatives worth trying.",
       "An empty result set marked as successful, with the timeout caught and dealt with inside the subagent."
     ],
-    correct: 0,
+    correct: 2,
     why: "The coordinator chooses between retrying with a narrower query, proceeding on what came back and reporting a gap — and it can only choose if the failure tells it which of those are open. A success marker hides the gap, a generic status discards the query and the partial results, and an exception that ends the run discards the work that succeeded." },
 
   { id: "d4c09", dom: 3, diff: "challenging", scen: "Claude Code for CI",
@@ -1396,28 +1398,21 @@ window.CCARF_BANK = [
 
 ];
 
-/* The five papers. 30 items each, 60 minutes, scored on the exam's own
-   100–1000 scale with the pass mark at 720. */
+/* The three papers. 60 items each, 120 minutes — the real exam's own length and
+   domain weights (27/18/20/20/15, so 16/10/12/12/10 items) — scored on the
+   exam's 100-1000 scale with the pass mark at 720. */
 
 window.CCARF_MOCKS = [
-  { id: "a", label: "Mock exam A", diff: "Standard", minutes: 60,
-    blurb: "A full-length standard paper: the same domain weights as the real exam, drawn from the core of each domain.",
-    ids: ["d1s06", "d1s03", "d4s05", "d5s04", "d1s05", "d3s01", "d2s04", "d1s04", "d2s02", "d2s05", "d1s08", "d1s02", "d5s03", "d3s05", "d5s02", "d5s01", "d3s06", "d5s05", "d3s04", "d2s03", "d4s03", "d1s07", "d4s02", "d4s04", "d4s06", "d4s01", "d1s01", "d2s01", "d3s02", "d3s03"] },
+  { id: "ar-standard", label: "Mock exam · Standard", diff: "Standard", minutes: 120,
+    blurb: "A full-length standard paper: every standard item in the bank, at the real exam's domain proportions. The one to sit first.",
+    ids: ["d1s03", "d4s12", "d1s16", "d3s08", "d1s11", "d4s05", "d1s02", "d3s12", "d1s04", "d2s04", "d1s15", "d4s10", "d5s05", "d3s09", "d1s01", "d2s10", "d3s10", "d5s01", "d4s06", "d1s09", "d2s07", "d3s11", "d5s04", "d4s08", "d1s05", "d2s01", "d3s02", "d5s08", "d4s04", "d1s10", "d2s05", "d4s02", "d3s06", "d5s09", "d1s12", "d3s03", "d2s06", "d5s07", "d1s07", "d4s03", "d3s07", "d2s03", "d5s06", "d4s07", "d1s08", "d2s02", "d3s04", "d4s09", "d5s03", "d1s14", "d2s08", "d4s11", "d5s10", "d1s06", "d3s05", "d5s02", "d3s01", "d4s01", "d1s13", "d2s09"] },
 
-  { id: "b", label: "Mock exam B", diff: "Standard", minutes: 60,
-    blurb: "A second standard paper. No question is shared with Mock A, so the two together cover every standard item in the bank.",
-    ids: ["d1s12", "d1s14", "d4s11", "d3s08", "d2s06", "d4s08", "d1s11", "d2s09", "d3s09", "d3s12", "d4s12", "d1s10", "d5s08", "d2s08", "d1s15", "d3s07", "d3s10", "d2s10", "d1s13", "d4s07", "d5s07", "d5s06", "d4s10", "d5s10", "d5s09", "d1s16", "d4s09", "d1s09", "d2s07", "d3s11"] },
+  { id: "ar-challenge", label: "Mock exam · Challenge", diff: "Challenging", minutes: 120,
+    blurb: "The harder paper: multi-constraint scenarios, quantified trade-offs, and distractors written to be the answer most candidates reach for first. It shares no question with the standard paper, so the two can be sat back to back.",
+    ids: ["d1c07", "d3c12", "d1c04", "d4c05", "d1c05", "d4c04", "d1c11", "d3c04", "d1c02", "d5c06", "d1c10", "d2c08", "d4c01", "d3c05", "d1c12", "d5c08", "d4c07", "d3c01", "d2c02", "d1c14", "d5c09", "d4c09", "d1c03", "d3c09", "d2c03", "d5c05", "d4c06", "d1c06", "d3c07", "d2c04", "d4c12", "d5c04", "d3c06", "d1c16", "d2c09", "d4c03", "d5c01", "d1c08", "d3c11", "d2c07", "d4c10", "d5c10", "d1c15", "d3c02", "d2c10", "d4c11", "d5c07", "d3c10", "d1c01", "d2c06", "d4c02", "d3c03", "d5c03", "d2c05", "d1c09", "d4c08", "d3c08", "d2c01", "d1c13", "d5c02"] },
 
-  { id: "c", label: "Mock exam C", diff: "Challenging", minutes: 60,
-    blurb: "Harder scenarios: multi-constraint situations where two answers look defensible and one principle separates them.",
-    ids: ["d1c01", "d5c03", "d3c05", "d2c02", "d1c05", "d3c04", "d5c05", "d2c03", "d4c06", "d1c04", "d5c01", "d5c04", "d1c07", "d1c06", "d2c04", "d3c01", "d4c05", "d3c03", "d3c06", "d1c08", "d4c02", "d5c02", "d2c05", "d1c02", "d4c01", "d3c02", "d4c04", "d4c03", "d2c01", "d1c03"] },
-
-  { id: "d", label: "Mock exam D", diff: "Challenging", minutes: 60,
-    blurb: "The hardest paper. Longer scenarios, quantified trade-offs, and distractors written to be the answer most candidates reach for first.",
-    ids: ["d1c11", "d3c08", "d2c10", "d4c10", "d3c07", "d4c08", "d5c06", "d2c06", "d4c11", "d3c09", "d4c07", "d5c07", "d5c10", "d1c09", "d3c11", "d1c15", "d4c09", "d4c12", "d5c09", "d1c12", "d3c12", "d1c14", "d2c08", "d5c08", "d1c16", "d2c07", "d1c10", "d3c10", "d1c13", "d2c09"] },
-
-  { id: "e", label: "Mock exam E", diff: "Practical", minutes: 60,
-    blurb: "The practical paper: four production scenarios worked end to end, including five situations the other papers never put to you. The only paper that revisits questions from A–D.",
-    ids: ["d3p01", "d5c02", "d2p01", "d1c03", "d4s01", "d4s02", "d5c01", "d2s05", "d5p01", "d3c11", "d5s09", "d5p02", "d1c08", "d1c10", "d1c01", "d4s10", "d4s08", "d3c09", "d3s04", "d3s09", "d2s01", "d2c02", "d3c02", "d1s09", "d4c09", "d2s10", "d4c07", "d1c06", "d1p01", "d1s14"] }
+  { id: "ar-practical", label: "Mock exam · Practical", diff: "Practical", minutes: 120,
+    blurb: "The practical paper: the four production scenarios of the practical test — CI, multi-agent research, customer support and code generation — worked end to end, including the five items the other papers never put to you. Standard and challenging items are mixed, and this is the one paper that revisits questions from the other two.",
+    ids: ["d1s04", "d4s02", "d1p01", "d3s09", "d1c15", "d3c10", "d1c11", "d4c06", "d1s06", "d5s06", "d1s14", "d2s04", "d3s05", "d4s05", "d1c03", "d2s05", "d5p01", "d4c05", "d3s03", "d1c08", "d2s01", "d4s08", "d5c08", "d3c11", "d1c07", "d4c09", "d2c06", "d5c02", "d3s04", "d1c06", "d2c08", "d4c08", "d5s02", "d3c09", "d1s08", "d4s11", "d2p01", "d3s11", "d5c01", "d1c10", "d5s09", "d3c05", "d2c10", "d1s10", "d4s01", "d3c02", "d5s03", "d2c02", "d1c01", "d4c07", "d3s08", "d5p02", "d2s10", "d1s01", "d4c03", "d5c07", "d2c09", "d3p01", "d1s09", "d4s10"] }
 
 ];

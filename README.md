@@ -33,16 +33,18 @@ render standalone — this is plain HTML, CSS and vanilla JS with no build step.
   (or got them wrong). The reasoning appears as soon as you answer. Single
   response, multiple response and — on CCAR-P — classification items, the ones
   that hand you a criterion and a box per statement.
-- **Mock exams** (`#/mock`) — CCAR-F's five timed 30-question papers (`#/mock/a` …
-  `#/mock/e`) at the real domain weights: A and B standard, C and D harder, E the
-  practical paper, 60 minutes each. CCDV-F's two full-length papers
+- **Mock exams** (`#/mock`) — CCAR-F's three full-length papers
+  (`#/mock/ar-standard`, `#/mock/ar-challenge`, `#/mock/ar-practical`): 60 questions
+  in 120 minutes at the real domain weights, the standard and the challenge paper
+  sharing no question and the practical paper working the four production
+  scenarios end to end. CCDV-F's two full-length papers
   (`#/mock/dv-standard`, `#/mock/dv-challenge`): 53 questions in 120 minutes, the
   real exam's own length and proportions. CCAR-P's two full-length papers
   (`#/mock/ap-standard`, `#/mock/ap-challenge`): 63 standalone items in 120 minutes
   at the blueprint weights, classification items included. On every paper the clock survives a
   reload, navigation is free, questions can be flagged, and nothing is revealed
   until you submit.
-- **Results** (`#/mock/a/result`, or `#/result` for the most recent) — scaled score
+- **Results** (`#/mock/ar-standard/result`, or `#/result` for the most recent) — scaled score
   with a pass verdict, a per-domain breakdown, and every question reviewed with its
   explanation.
 
@@ -52,7 +54,7 @@ render standalone — this is plain HTML, CSS and vanilla JS with no build step.
 index.html                    page shell: sidebar + <main>
 assets/css/site.css           all styles; design tokens on :root
 assets/js/content-ccar-f.js   CCAR-F domains: lessons and quiz questions
-assets/js/questions-ccar-f.js CCAR-F question bank (125 items) and the five papers
+assets/js/questions-ccar-f.js CCAR-F question bank (125 items) and the three papers
 assets/js/content-ccdv-f.js   CCDV-F domains: lessons and quiz questions
 assets/js/questions-ccdv-f.js CCDV-F question bank (106 items) and the two papers
 assets/js/content-ccar-p.js   CCAR-P domains: lessons and quiz questions
@@ -174,7 +176,7 @@ those 120 do not already cover.
 
 ```js
 window.CCARF_BANK  // { id, dom, diff, scen, text, opts[4], correct, why }
-window.CCARF_MOCKS // { id, label, diff, minutes, blurb, ids[30] }
+window.CCARF_MOCKS // { id, label, diff, minutes, blurb, ids[60] }
 ```
 
 The bank is deliberately free of the usual multiple-choice tells. The correct
@@ -183,17 +185,19 @@ the four in 32 of the 125 items — chance, not a signal. Distractors are the
 answers the guide's own explanations name as tempting (a prompt fix where code is
 needed, an over-engineered classifier, a symptom filter), not filler.
 
-Papers A–D partition the 120 core items: each appears in exactly one of them, at
-the exam's domain weights (27/18/20/20/15) over 30 questions. A and B are the
-standard pair, C and D the harder pair, so the two papers of a pair never repeat a
-question.
+The standard and the challenge paper partition the 120 core items: each item
+appears in exactly one of the two, 60 questions a paper at the exam's domain
+weights (27/18/20/20/15, so 16/10/12/12/10). They never repeat a question, so the
+pair can be sat back to back — the same length, the same shape and the same
+allowance as the real exam.
 
-Paper E is the practical paper. The practical test it comes from overlaps the
+The third is the practical paper. The practical test it comes from overlaps the
 guide's practice set almost completely — only five of its 60 questions ask
-something the core bank does not already ask — so E carries those five and fills
-its remaining 25 slots, at the same domain weights, from the core items covering
-the same four production scenarios. It is the one paper that repeats questions
-A–D already ask, and `emit.py` asserts that it does not repeat one within itself.
+something the core bank does not already ask — so it carries those five and fills
+its remaining 55 slots, at the same domain weights, from the core items covering
+the same four production scenarios, standard and challenging mixed. It is the one
+paper that repeats questions the other two already ask, and `emit.py` asserts that
+it does not repeat one within itself.
 
 Scoring maps the raw score onto the exam's 100–1000 scale — `100 + 900 × correct /
 total`, pass at 720. That is a presentation of your raw score, not the certifying
