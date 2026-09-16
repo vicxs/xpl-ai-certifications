@@ -291,11 +291,6 @@
     page.appendChild(hero);
 
     var roadmapSection = el("div");
-    var head = el("div", "section__head");
-    head.appendChild(el("div", "eyebrow", "The roadmap"));
-    head.appendChild(el("div", "section__note",
-      "Architect Foundations first for the shared vocabulary, Developer Foundations next if you write code, Architect Professional once you have production experience."));
-    roadmapSection.appendChild(head);
 
     var grid = el("div", "roadmap");
     DATA.order.forEach(function (id, i) {
