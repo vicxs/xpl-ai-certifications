@@ -44,7 +44,7 @@ window.CCARF_BANK = [
     why: "The agent has no stated boundary between the cases it owns and the cases it does not, so it draws one itself and gets it wrong in both directions. Criteria with worked examples supply that boundary. A self-rated score, a trained classifier and a sentiment threshold all build machinery around the decision without ever stating what the decision is." },
 
   { id: "d1c02", dom: 0, diff: "challenging", scen: "Multi-agent research system",
-    text: "The synthesis agent frequently needs to verify a claim. Today it hands control back to the coordinator, which calls the web-search agent and re-invokes synthesis — two to three extra round trips and 40% more latency. Analysis shows 85% of those checks are simple facts (dates, names, figures) and 15% need real investigation.",
+    text: "The synthesis agent frequently needs to verify a claim. Today it hands control back to the coordinator, which calls the web-search agent and re-invokes synthesis — two to three extra round trips and 40% more latency. Analysis shows 85% of those checks are simple facts (dates, names, figures) and 15% need real investigation. Which change most effectively reduces that latency?",
     opts: [
       "Have the web-search agent cache extra context around every source during the initial research, anticipating what synthesis will need.",
       "Give synthesis a narrow verify_fact tool for the simple checks, and keep complex verification routed through the coordinator.",
@@ -143,7 +143,7 @@ window.CCARF_BANK = [
     why: "\"Appropriate\" leaves the scale undefined, so it is re-invented per call. Criteria plus a worked example per level make the ratings reproducible; double-rating measures the inconsistency without removing it, and dropping severity discards useful signal." },
 
   { id: "d1c09", dom: 0, diff: "challenging", scen: "Customer support agent",
-    text: "On complex billing disputes and multi-order returns, satisfaction runs 15% below simple cases even when the resolution is technically right. The agent explains itself inconsistently — sometimes missing policy detail, sometimes timelines, sometimes next steps — and the gap differs case by case. No extra human review is available.",
+    text: "On complex billing disputes and multi-order returns, satisfaction runs 15% below simple cases even when the resolution is technically right. The agent explains itself inconsistently — sometimes missing policy detail, sometimes timelines, sometimes next steps — and the gap differs case by case. No extra human review is available. What most effectively closes the satisfaction gap?",
     opts: [
       "Add a closing confirmation step that asks the customer whether the reply fully resolved their issue.",
       "Route complex cases to a larger model, using a defined complexity metric to decide which ones qualify.",
@@ -737,7 +737,7 @@ window.CCARF_BANK = [
     why: "A summary at the front uses the position that is read most reliably, and headings give the model a way to navigate the middle. Compressing to 20K throws away detail, rotation shares the problem out rather than solving it, and incremental streaming just reproduces the ordering in time." },
 
   { id: "d3c09", dom: 2, diff: "challenging", scen: "Claude Code for CI",
-    text: "Automated reviews average 15 findings per PR with a 40% false-positive rate. Developers say the bottleneck is investigation: each finding must be opened to read the reasoning before deciding. CLAUDE.md already documents acceptable patterns, and stakeholders have ruled out filtering findings before developers see them.",
+    text: "Automated reviews average 15 findings per PR with a 40% false-positive rate. Developers say the bottleneck is investigation: each finding must be opened to read the reasoning before deciding. CLAUDE.md already documents acceptable patterns, and stakeholders have ruled out filtering findings before developers see them. What most effectively addresses the bottleneck?",
     opts: [
       "Add a post-processor that suppresses findings matching historical false-positive signatures automatically.",
       "Split findings into blocking issues and suggestions, with different review requirements for each level.",
