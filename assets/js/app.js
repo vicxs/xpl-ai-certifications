@@ -745,6 +745,8 @@
       node.appendChild(fig);
     }
 
+    if (lesson.more && lesson.more.length) node.appendChild(renderMore(key, lesson.more));
+
     /* `exam` is a paragraph of exam notes, or a list of the traps this lesson's
        distractors are built from. */
     if (lesson.exam) {
@@ -762,6 +764,57 @@
     }
 
     return node;
+  }
+
+  /* The lesson's long-form explanation, folded away under the key points so the
+     page still scans as a list of lessons. `more` is a list of blocks: a string
+     is a paragraph, { h } a subheading, { example } a worked example and
+     { code, label } a code block. Which ones are open is remembered for the
+     session, so answering a quiz question (which re-renders the page) does not
+     fold them back up. */
+  var openMore = {};
+
+  function renderMore(key, blocks) {
+    var box = document.createElement("details");
+    box.className = "more";
+    box.open = !!openMore[key];
+    box.addEventListener("toggle", function () {
+      if (box.open) openMore[key] = true; else delete openMore[key];
+    });
+
+    var words = 0;
+    blocks.forEach(function (b) {
+      var t = typeof b === "string" ? b : (b.example || b.h || "");
+      words += t.replace(/<[^>]+>/g, "").split(/\s+/).length;
+    });
+    var summary = el("summary", "more__summary");
+    summary.appendChild(el("span", "more__label", "Go deeper"));
+    summary.appendChild(el("span", "more__meta",
+      "full explanation · " + Math.max(1, Math.round(words / 200)) + " min read"));
+    box.appendChild(summary);
+
+    var inner = el("div", "more__body");
+    blocks.forEach(function (b) {
+      if (typeof b === "string") {
+        inner.appendChild(elRich("p", null, b));
+      } else if (b.h) {
+        inner.appendChild(elRich("h4", "more__h", b.h));
+      } else if (b.example) {
+        var ex = el("div", "more__example");
+        ex.appendChild(el("div", "more__example-head", b.label || "Worked example"));
+        ex.appendChild(elRich("p", null, b.example));
+        inner.appendChild(ex);
+      } else if (b.code) {
+        var fig = el("figure", "code");
+        if (b.label) fig.appendChild(el("figcaption", null, b.label));
+        var pre = el("pre");
+        pre.appendChild(el("code", null, b.code));
+        fig.appendChild(pre);
+        inner.appendChild(fig);
+      }
+    });
+    box.appendChild(inner);
+    return box;
   }
 
   function renderQuestion(certId, di, q, qi) {
@@ -821,11 +874,39 @@
     head.appendChild(el("p", "page__lead", d.intro));
     page.appendChild(head);
 
+    /* One switch for every "Go deeper" panel on the page, for reading the
+       domain end to end rather than lesson by lesson. */
+    var deep = d.concepts.filter(function (x) { return x.more && x.more.length; }).length;
+    if (deep) {
+      var tools = el("div", "lessons__tools");
+      tools.appendChild(el("span", null,
+        plural(deep, "lesson") + " with a full explanation under “Go deeper”"));
+      var toggle = el("button", "lessons__toggle");
+      toggle.type = "button";
+      tools.appendChild(toggle);
+      page.appendChild(tools);
+    }
+
     var lessons = el("div", "lessons");
     d.concepts.forEach(function (lesson, ci) {
       lessons.appendChild(renderLesson(certId, di, lesson, ci));
     });
     page.appendChild(lessons);
+
+    if (deep) {
+      var panels = lessons.querySelectorAll("details.more");
+      var sync = function () {
+        var all = Array.prototype.every.call(panels, function (p) { return p.open; });
+        toggle.textContent = all ? "Collapse all" : "Expand all";
+        toggle.setAttribute("aria-expanded", all ? "true" : "false");
+      };
+      Array.prototype.forEach.call(panels, function (p) { p.addEventListener("toggle", sync); });
+      toggle.addEventListener("click", function () {
+        var open = toggle.getAttribute("aria-expanded") !== "true";
+        Array.prototype.forEach.call(panels, function (p) { p.open = open; });
+      });
+      sync();
+    }
 
     /* ---- end-of-domain quiz ---- */
     var score = quizScore(certId, di);

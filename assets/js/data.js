@@ -139,4 +139,18 @@ const DATA = {
   ]
 };
 
+/* The long-form "Go deeper" explanation of each lesson lives in its own
+   deep-<code>.js, keyed by lesson ref, so the lesson files stay scannable (and
+   CCAR-P's, which is generated, stays untouched). Attach each one to its lesson. */
+[["CCAR-F", window.CCARF_DEEP], ["CCDV-F", window.CCDVF_DEEP], ["CCAR-P", window.CCARP_DEEP]]
+  .forEach(function (pair) {
+    var deep = pair[1];
+    if (!deep) return;
+    DATA.certs[pair[0]].domains.forEach(function (d) {
+      d.concepts.forEach(function (lesson) {
+        if (deep[lesson.ref]) lesson.more = deep[lesson.ref];
+      });
+    });
+  });
+
 window.DATA = DATA;

@@ -421,6 +421,7 @@ h1.page__title { font: 400 clamp(1.875rem, 2.6vw, 2.5rem)/1.1 var(--serif); marg
 .lesson__body code,
 .lesson__points code,
 .lesson__exam code,
+.more__body code,
 .q__text code,
 .opt__text code,
 .q__why code,
@@ -434,6 +435,7 @@ h1.page__title { font: 400 clamp(1.875rem, 2.6vw, 2.5rem)/1.1 var(--serif); marg
 }
 .lesson__points strong,
 .lesson__body strong,
+.more__body strong,
 .q__text strong,
 .opt__text strong,
 .q__why strong,
@@ -533,6 +535,80 @@ h1.page__title { font: 400 clamp(1.875rem, 2.6vw, 2.5rem)/1.1 var(--serif); marg
   color: var(--accent);
   margin-bottom: .25rem;
 }
+
+/* "Go deeper": the lesson's long-form explanation, folded under its points. */
+.lessons__tools {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin: -.5rem 0 .875rem;
+  font: 400 .75rem var(--sans);
+  color: var(--muted-3);
+}
+.lessons__toggle {
+  flex: none;
+  font: 500 .6875rem var(--mono);
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: .3125rem;
+  padding: .3125rem .625rem;
+  cursor: pointer;
+}
+.lessons__toggle:hover { border-color: var(--accent); }
+
+.more {
+  margin-top: .875rem;
+  border: 1px solid var(--line-soft);
+  border-radius: .4375rem;
+  background: #fff;
+  max-width: 50rem;
+}
+.more__summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: .625rem;
+  padding: .5625rem .875rem;
+  user-select: none;
+}
+.more__summary::-webkit-details-marker { display: none; }
+.more__summary::before {
+  content: "+";
+  flex: none;
+  width: .75rem;
+  font: 500 .8125rem var(--mono);
+  color: var(--accent);
+}
+.more[open] > .more__summary::before { content: "−"; }
+.more[open] > .more__summary { border-bottom: 1px solid var(--line-faint); }
+.more__summary:hover .more__label { color: var(--accent); }
+.more__summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: .4375rem; }
+.more__label { font: 600 .8125rem var(--sans); }
+.more__meta { font: 400 .6875rem var(--mono); color: var(--muted-4); }
+.more__body {
+  padding: .25rem 1.125rem 1rem 2.25rem;
+  font: 400 .875rem/1.75 var(--sans);
+  color: rgba(25, 25, 25, .78);
+}
+.more__body p { margin: .75rem 0 0; }
+.more__h { font: 600 .8125rem var(--sans); color: var(--ink); margin: 1.25rem 0 0; }
+.more__example {
+  margin-top: .875rem;
+  background: var(--panel);
+  border-radius: .375rem;
+  padding: .625rem .875rem .75rem;
+}
+.more__example p { margin: .25rem 0 0; font-size: .844rem; }
+.more__example-head {
+  font: 500 .594rem var(--mono);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--muted-3);
+}
+.more .code { margin-top: .875rem; }
 
 /* ---------- domain quiz ---------- */
 
@@ -919,6 +995,9 @@ h1.page__title { font: 400 clamp(1.875rem, 2.6vw, 2.5rem)/1.1 var(--serif); marg
   .cls-cat { white-space: normal; }
   .lesson__heading { flex-direction: column; gap: .1875rem; }
   .guide-nav { flex-direction: column; }
+  .more__body { padding: .25rem .875rem .875rem; }
+  .more__meta { display: none; }
+  .lessons__tools { flex-direction: column; gap: .5rem; }
   .guide-nav__link, .guide-nav__link--next { max-width: none; text-align: left; margin-left: 0; }
   .filters { padding: .8125rem .875rem; }
   .filters__row { flex-direction: column; align-items: stretch; gap: .375rem; }
