@@ -28,6 +28,11 @@ render standalone — this is plain HTML, CSS and vanilla JS with no build step.
   one lesson per blueprint sub-skill — 38 of them, each with its bullet points and
   the traps its distractors are built from — and a quiz of three to ten questions
   per domain.
+- **Go deeper** — under the key points of every lesson in all three guides, a
+  folded long-form explanation: the mechanism behind the points, the decision rule
+  between the options, how the exam frames the topic and one worked exam-style
+  scenario. About 60,000 words over the 93 lessons; each domain page has one switch
+  to expand or collapse them all.
 - **Question bank** (`#/bank`) — 125 CCAR-F items, 106 CCDV-F items and 142 CCAR-P
   items, one exam at a time, filterable by domain, by difficulty and by whether you have answered them
   (or got them wrong). The reasoning appears as soon as you answer. Single
@@ -59,6 +64,9 @@ assets/js/content-ccdv-f.js   CCDV-F domains: lessons and quiz questions
 assets/js/questions-ccdv-f.js CCDV-F question bank (106 items) and the two papers
 assets/js/content-ccar-p.js   CCAR-P domains: lessons and quiz questions
 assets/js/questions-ccar-p.js CCAR-P question bank (142 items) and the two papers
+assets/js/deep-ccar-f.js      the Go-deeper explanation of each lesson, one file per
+assets/js/deep-ccdv-f.js      certification, keyed by lesson ref
+assets/js/deep-ccar-p.js
 assets/js/data.js             catalogue: certs, exam facts, apply steps
 assets/js/app.js              hash router, rendering, localStorage progress
 ```
@@ -66,6 +74,31 @@ assets/js/app.js              hash router, rendering, localStorage progress
 Every `content-*.js` file must load before `data.js` — the catalogue reads
 `window.CCARF_DOMAINS`, `window.CCDVF_DOMAINS` and `window.CCARP_DOMAINS` when
 they are defined. The `questions-*.js` files only have to load before `app.js`.
+
+## Go deeper
+
+Each lesson can fold a long-form explanation under its key points. The prose
+lives apart from the lessons, in `assets/js/deep-<code>.js`, keyed by lesson ref:
+
+```js
+window.CCDVF_DEEP = {
+  "2.3": [
+    { h: "Subheading" },
+    "A paragraph — <b>, <i> and <code> as in the lesson files.",
+    { example: "A worked scenario, reasoned to the right answer." },
+    { code: "…", label: "Optional caption" }
+  ]
+};
+```
+
+`data.js` attaches each entry to its lesson as `more`, so the files must load
+before it; a lesson with no entry simply has no dropdown. Keeping them apart
+leaves the lesson files scannable, and leaves CCAR-P's generated
+`content-ccar-p.js` untouched. They are hand-edited — no generator — and were
+written from the same sources as their guides: the CCAR-F study guide based on the
+official exam guide, the CCDV-F Developer's Study Guide and 1.1 source, and the
+CCAR-P study site. Which panels are open is kept for the session only, so a quiz
+answer re-rendering the page does not fold them back up.
 
 ## CCAR-F content
 
