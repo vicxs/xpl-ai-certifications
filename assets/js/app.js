@@ -27,7 +27,8 @@
     bankAnswers: {},   /* question bank, keyed by question id */
     attempts: {},      /* mock id -> { answers, flags, idx, startedAt, deadline, submitted } */
     scores: {},        /* mock id -> { right, total, scaled, byDomain, at, seconds } */
-    lastMock: null
+    lastMock: null,
+    reviewOnly: "all"  /* mock review: all | missed (answered wrong or left blank) */
   };
 
   var state = load();
@@ -1596,21 +1597,49 @@
     actions.appendChild(bankLink);
     page.appendChild(actions);
 
-    var a = attempt(m.id) || { answers: {} };
+    page.appendChild(renderMockReview(m, attempt(m.id) || { answers: {} }));
+
+    return page;
+  }
+
+  /* The review under a result: every question, or only the ones missed
+     (answered wrong or left blank). Cards keep their number on the paper, so
+     a filtered list still reads Q7, Q12, Q31. */
+  function renderMockReview(m, a) {
+    var missed = m.ids.filter(function (qid) { return !isRight(BY_ID[qid], a.answers[qid]); });
+    var only = state.reviewOnly === "missed" ? "missed" : "all";
+
     var review = el("section", "quiz");
     review.setAttribute("aria-label", "Review");
     var rhead = el("div", "quiz__head");
     var rtitle = el("div");
-    rtitle.appendChild(el("div", "eyebrow", "Every question, with the reasoning"));
+    rtitle.appendChild(el("div", "eyebrow", only === "missed"
+      ? "Only what you missed, with the reasoning"
+      : "Every question, with the reasoning"));
     rtitle.appendChild(el("h2", "quiz__title", "Review"));
     rhead.appendChild(rtitle);
     review.appendChild(rhead);
-    m.ids.forEach(function (qid, i) {
-      review.appendChild(questionCard(BY_ID[qid], i + 1, "review", a.answers[qid], function () {}));
-    });
-    page.appendChild(review);
 
-    return page;
+    var filters = el("div", "filters filters--review");
+    filters.appendChild(filterRow("Show", [
+      { label: "Everything · " + m.ids.length, value: "all" },
+      { label: "Missed · " + missed.length, value: "missed" }
+    ], only, function (v) {
+      save({ reviewOnly: v });
+      /* Swap the review alone so the page does not jump back to the score. */
+      review.parentNode.replaceChild(renderMockReview(m, a), review);
+    }));
+    review.appendChild(filters);
+
+    var shown = 0;
+    m.ids.forEach(function (qid, i) {
+      if (only === "missed" && missed.indexOf(qid) === -1) return;
+      review.appendChild(questionCard(BY_ID[qid], i + 1, "review", a.answers[qid], function () {}));
+      shown++;
+    });
+    if (!shown) review.appendChild(el("p", "empty", "Nothing missed — every question on this paper is right."));
+
+    return review;
   }
 
   function renderResultShortcut() {

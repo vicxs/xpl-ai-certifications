@@ -51,7 +51,8 @@ render standalone — this is plain HTML, CSS and vanilla JS with no build step.
   until you submit.
 - **Results** (`#/mock/ar-standard/result`, or `#/result` for the most recent) — scaled score
   with a pass verdict, a per-domain breakdown, and every question reviewed with its
-  explanation.
+  explanation. The review can be narrowed to only the questions you missed (answered
+  wrong or left blank); the choice is remembered across papers.
 
 ## Layout
 
